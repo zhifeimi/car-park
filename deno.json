@@ -1,0 +1,16 @@
+{
+  "nodeModulesDir": "none",
+  "workspace": [
+    "./apps/web",
+    "./apps/mobile",
+    "./packages/utils",
+    "./packages/ui"
+  ],
+  "imports": {
+    "@car-park/utils": "./packages/utils/src/index.ts",
+    "@car-park/ui": "./packages/ui/src/index.ts",
+    "vite": "npm:vite@^8.2.0",
+    "@deno/vite-plugin": "npm:@deno/vite-plugin@2.0.2",
+    "@vitejs/plugin-vue": "npm:@vitejs/plugin-vue@^6.0.0"
+  }
+}

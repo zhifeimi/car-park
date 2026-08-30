@@ -1,0 +1,11 @@
+{
+  "name": "@car-park/utils",
+  "version": "1.0.0",
+  "exports": "./src/index.ts",
+  "tasks": {
+    "test": "deno test --no-check"
+  },
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  }
+}

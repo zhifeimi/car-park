@@ -1,0 +1,35 @@
+# TEST PROFILE ONLY — credentials for the local test database are NEVER stored here.
+# They live in secrets/carpark-test.env (repo root) and are injected as
+# spring.datasource.* system properties by DbIntegrationTest's static initializer.
+# The db-tagged tests are excluded from the default run (pom.xml surefire
+# excludedGroups=db): `./mvnw test` stays green without MySQL;
+# `./mvnw test -Dgroups=db` requires brew MySQL + the secrets file.
+spring:
+  # Keep the real MySQL: without this the @DataJpaTest slice swaps the
+  # datasource for an embedded database.
+  test:
+    database:
+      replace: none
+  # Schema once per context boot (idempotent CREATE TABLE IF NOT EXISTS);
+  # data.sql is deliberately NOT loaded — tests seed only what they need.
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+      schema-locations: classpath:db/schema.sql
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+# The full-context integration tests boot the whole application, so the base
+# config's env-var placeholders need TEST-ONLY values injected from the environment.
+# Set JWT_SECRET (or TEST_JWT_SECRET) before running the @Tag("db") suite.
+app:
+  jwt:
+    secret: ${TEST_JWT_SECRET:${JWT_SECRET}}
+  cors:
+    allowed-origins: http://localhost:5173,http://localhost:5174

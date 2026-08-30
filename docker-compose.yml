@@ -1,0 +1,23 @@
+# Local development database ONLY. Never point any environment at the production DB.
+# The initdb scripts run once, on first creation of the named volume.
+services:
+  mysql:
+    image: mysql:9.7
+    container_name: carpark-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_dev_only}
+      MYSQL_DATABASE: carpark
+      MYSQL_USER: carpark
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-carpark_dev}
+    volumes:
+      - carpark_db:/var/lib/mysql
+      # Keep the init client aligned with the UTF-8 SQL source files.
+      - ./docker/mysql/99-carpark-client.cnf:/etc/mysql/conf.d/99-carpark-client.cnf:ro
+      # MySQL runs init files lexically; ensure DDL precedes development seed data.
+      - ./apps/backend/src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./apps/backend/src/main/resources/db/data.sql:/docker-entrypoint-initdb.d/02-data.sql:ro
+
+volumes:
+  carpark_db:

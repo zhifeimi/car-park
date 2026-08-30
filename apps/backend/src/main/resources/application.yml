@@ -1,0 +1,69 @@
+# CarPark server — base config.
+# Secrets come from environment variables with NO defaults: a prod start without
+# DB_URL / DB_USERNAME / DB_PASSWORD / JWT_SECRET / CORS_ORIGINS fails fast.
+# Dev overrides (localhost DB, dev-only secret) live in application-dev.yml.
+server:
+  port: 8080
+  # Honor X-Forwarded-* so rate limiting keys on the real client IP behind a proxy.
+  forward-headers-strategy: native
+
+spring:
+  application:
+    name: CarPark
+  profiles:
+    default: dev
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+  jpa:
+    # The cp_* tables already exist (prod) or are created by db/schema.sql (dev).
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      # Pin the dialect explicitly: Hibernate 7 no longer falls back to
+      # guessing from the JDBC URL, and without this the context refuses
+      # to start when no DB connection is available (e.g. context-load
+      # tests). The app is MySQL-only by design (native cp_* queries).
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  jackson:
+    time-zone: Asia/Shanghai
+    # Jackson 3 (Boot 4) moved the date/time feature flags from
+    # SerializationFeature to DateTimeFeature — this is what used to be
+    # spring.jackson.serialization.write-dates-as-timestamps.
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    enabled: false   # dev profile re-enables
+  swagger-ui:
+    enabled: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}        # HS256 key, >= 32 bytes, from env only
+    expiration-minutes: 720      # stateless: no Redis refresh, so longer than legacy 30min (documented trade-off)
+  cors:
+    allowed-origins: ${CORS_ORIGINS}   # comma-separated allowlist
+  rate-limit:
+    login-per-minute: 5
+    booking-per-minute: 10

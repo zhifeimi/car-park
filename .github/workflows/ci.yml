@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-test:
+    name: Backend Test (Java 25)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run backend unit and smoke tests
+        working-directory: apps/backend
+        run: ./mvnw test
+
+  frontend-lint-build:
+    name: Frontend Lint & Build (Deno)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Run Deno lint
+        run: deno lint
+
+      - name: Build Web Admin
+        working-directory: apps/web
+        run: deno task build
+
+      - name: Build Mobile H5
+        working-directory: apps/mobile
+        run: deno task build

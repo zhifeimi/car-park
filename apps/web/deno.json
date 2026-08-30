@@ -1,0 +1,63 @@
+{
+  "tasks": {
+    "dev": "deno run -A npm:vite",
+    "build": "deno run -A npm:vite build",
+    "preview": "deno run -A npm:vite preview",
+    "test": "deno test -A tests"
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1",
+    "@car-park/utils": "../../packages/utils/src/index.ts",
+    "@car-park/ui": "../../packages/ui/src/index.ts",
+
+    "vue": "./src/vendor/vue.js",
+    "vue-runtime": "npm:vue@3.5.41/dist/vue.runtime.esm-bundler.js",
+    "vue-router": "npm:vue-router@^4.5.0/dist/vue-router.mjs",
+    "pinia": "npm:pinia@^3.0.0",
+    "axios": "npm:axios@^1.19.0",
+    "element-plus": "npm:element-plus@^2.14.4",
+    "@element-plus/icons-vue": "npm:@element-plus/icons-vue@^2.3.2",
+    "vite": "npm:vite@^8.2.0",
+    "@deno/vite-plugin": "npm:@deno/vite-plugin@2.0.2",
+    "@vitejs/plugin-vue": "npm:@vitejs/plugin-vue@^6.0.0",
+
+    "@vue/runtime-dom": "npm:@vue/runtime-dom@3.5.41/dist/runtime-dom.esm-bundler.js",
+    "@vue/runtime-core": "npm:@vue/runtime-core@3.5.41/dist/runtime-core.esm-bundler.js",
+    "@vue/reactivity": "npm:@vue/reactivity@3.5.41/dist/reactivity.esm-bundler.js",
+    "@vue/shared": "npm:@vue/shared@3.5.41/dist/shared.esm-bundler.js",
+
+    "@popperjs/core": "npm:@popperjs/core@^2.11.7",
+    "@ctrl/tinycolor": "npm:@ctrl/tinycolor@^4.2.0/dist/module/public_api.js",
+    "@floating-ui/dom": "npm:@floating-ui/dom@^1.8.0",
+    "@floating-ui/core": "npm:@floating-ui/core@^1.0.0",
+    "@vueuse/core": "npm:@vueuse/core@14.3.0",
+    "@vueuse/shared": "npm:@vueuse/shared@14.3.0",
+    "@vueuse/metadata": "npm:@vueuse/metadata@14.3.0",
+    "async-validator": "npm:async-validator@^4.2.5/dist-web/index.js",
+    "dayjs": "./src/vendor/dayjs.js",
+    "dayjs-runtime": "npm:dayjs@^1.11.20/esm/index.js",
+    "dayjs/plugin/advancedFormat": "npm:dayjs@^1.11.20/esm/plugin/advancedFormat/index.js",
+    "dayjs/plugin/customParseFormat": "npm:dayjs@^1.11.20/esm/plugin/customParseFormat/index.js",
+    "dayjs/plugin/dayOfYear": "npm:dayjs@^1.11.20/esm/plugin/dayOfYear/index.js",
+    "dayjs/plugin/isSameOrAfter": "npm:dayjs@^1.11.20/esm/plugin/isSameOrAfter/index.js",
+    "dayjs/plugin/isSameOrBefore": "npm:dayjs@^1.11.20/esm/plugin/isSameOrBefore/index.js",
+    "dayjs/plugin/localeData": "npm:dayjs@^1.11.20/esm/plugin/localeData/index.js",
+    "dayjs/plugin/weekOfYear": "npm:dayjs@^1.11.20/esm/plugin/weekOfYear/index.js",
+    "dayjs/plugin/weekYear": "npm:dayjs@^1.11.20/esm/plugin/weekYear/index.js",
+    "escape-html": "npm:escape-html@^1.0.3",
+    "lodash": "npm:lodash@^4.18.1",
+    "lodash-es": "npm:lodash-es@^4.18.1",
+    "lodash-unified": "npm:lodash-unified@^1.0.3",
+    "memoize-one": "npm:memoize-one@^6.0.0/dist/memoize-one.esm.js",
+    "normalize-wheel-es": "npm:normalize-wheel-es@^1.2.0/dist/index.mjs"
+  },
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "fmt": {
+    "exclude": ["dist"]
+  },
+  "lint": {
+    "exclude": ["dist"]
+  }
+}

@@ -1,0 +1,24 @@
+# DEV PROFILE ONLY — never deployed. Dev always uses the local docker MySQL,
+# never the production database.
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/carpark?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: carpark
+    password: carpark_dev
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+app:
+  jwt:
+    # DEV-ONLY literal — 32+ bytes. Production uses ${JWT_SECRET} from the environment.
+    secret: DEV-ONLY-carpark-secret-do-not-use-in-prod-0123456789
+  cors:
+    allowed-origins: http://localhost:5173,http://localhost:5174
+
+logging:
+  level:
+    press.mizhifei: debug
