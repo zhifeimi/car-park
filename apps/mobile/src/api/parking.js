@@ -1,5 +1,6 @@
 import axios from 'axios'
-import { envelopeOf } from '@car-park/utils'
+import { envelopeOf, localizeServerMessage } from '@car-park/utils'
+import { getLocale } from '@/locales'
 
 // '/prod-api' mirrors the deployed H5 (park.example.com/prod-api). In dev the
 // Vite proxy rewrites it to http://localhost:8080; in prod the reverse proxy
@@ -15,9 +16,16 @@ const http = axios.create({
  * business failure, hand the full envelope body back on success.
  */
 async function unwrap(promise) {
-  const body = (await promise).data
+  let body
+  try {
+    body = (await promise).data
+  } catch (err) {
+    // HTTP-level failures (429 rate limit) still carry the server's {msg}
+    throw new Error(localizeServerMessage(err.response?.data?.msg, getLocale()) || err.message)
+  }
   if (envelopeOf(body).code !== 200) {
-    throw new Error(envelopeOf(body).msg || '请求失败')
+    // empty message → the view shows its own localized fallback
+    throw new Error(localizeServerMessage(envelopeOf(body).msg, getLocale()) ?? '')
   }
   return body
 }

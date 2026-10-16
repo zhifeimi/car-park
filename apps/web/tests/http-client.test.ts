@@ -13,6 +13,8 @@ import { useUserStore } from '../src/stores/user.js'
 import { pinia } from '../src/stores/pinia.js'
 import { http, ui } from '../src/api/http.js'
 import { deleteUser } from '../src/api/auth.js'
+import { getLocale } from '../src/locales/index.js'
+import { localizeServerMessage } from '@car-park/utils'
 import {
   addPark,
   deleteBooking,
@@ -81,8 +83,10 @@ Deno.test('business failure (code 500) rejects with the server message and toast
   await withUi({ message: (m: string) => toasts.push(m) }, async () => {
     serve(() => ok({ code: 500, msg: '该停车场当日预约名额已满', data: null }))
     const err = await assertRejects(() => addPark({ name: 'x', lotNum: 3 }))
-    assertEquals((err as Error).message, '该停车场当日预约名额已满')
-    assertEquals(toasts, ['该停车场当日预约名额已满'])
+    // shown in the UI's language: Chinese as sent for zh-CN, English otherwise
+    const shown = localizeServerMessage('该停车场当日预约名额已满', getLocale())
+    assertEquals((err as Error).message, shown)
+    assertEquals(toasts, [shown])
   })
 })
 

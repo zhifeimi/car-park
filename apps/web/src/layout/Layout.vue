@@ -38,8 +38,8 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="en" :disabled="locale === 'en'">English</el-dropdown-item>
-                <el-dropdown-item command="zh-CN" :disabled="locale === 'zh-CN'">简体中文</el-dropdown-item>
+                <el-dropdown-item v-for="option in localeOptions" :key="option.code" :command="option.code"
+                  :disabled="locale === option.code" :lang="option.code">{{ option.label }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -98,7 +98,7 @@ const sidebarWidth = '240px'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const { locale, setLocale, t } = useI18n()
+const { locale, setLocale, t, localeOptions } = useI18n()
 
 const pageTitles = computed(() => ({
   '/dashboard': t('nav.dashboard'),
@@ -108,7 +108,7 @@ const pageTitles = computed(() => ({
 }))
 const pageTitle = computed(() => pageTitles.value[route.path] || t('nav.systemTitle'))
 
-const currentLocaleLabel = computed(() => (locale.value === 'zh-CN' ? '简体中文' : 'English'))
+const currentLocaleLabel = computed(() => localeOptions.find((o) => o.code === locale.value)?.label)
 
 function handleLocaleChange(lang) {
   setLocale(lang)
@@ -218,20 +218,20 @@ async function submitPassword() {
 .logo-icon {
   width: 36px;
   height: 36px;
-  background: var(--cp-primary);
-  border-radius: 10px;
+  background: var(--np-on-sign);
+  border-radius: var(--np-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-size: 18px;
-  color: #fff;
+  color: var(--np-sign);
   flex-shrink: 0;
   letter-spacing: -0.5px;
 }
 
 .logo-text {
-  color: #f1f5f9;
+  color: var(--np-on-sign);
   font-size: 16px;
   font-weight: 600;
   white-space: nowrap;
@@ -256,7 +256,7 @@ async function submitPassword() {
 
 .layout-aside :deep(.el-menu-item:hover) {
   background: var(--cp-sidebar-hover);
-  color: #e2e8f0;
+  color: var(--np-on-sign);
 }
 
 .layout-aside :deep(.el-menu-item.is-active) {
@@ -338,7 +338,7 @@ async function submitPassword() {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--cp-primary), var(--cp-primary-light));
+  background: var(--cp-primary);
   color: #fff;
   display: flex;
   align-items: center;

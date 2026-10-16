@@ -71,7 +71,7 @@ function onKey(key) {
 <style scoped>
 .keyboard {
   padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
-  background: #d7dade;
+  background: var(--np-sunken, #d7dade);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -91,13 +91,13 @@ function onKey(key) {
   border-radius: 5px;
   background: #fff;
   font-size: 16px;
-  color: #323233;
+  color: var(--np-ink, #323233);
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
   -webkit-tap-highlight-color: transparent;
 }
 
 .kb-key:active {
-  background: #e8e8e8;
+  background: var(--np-line, #e8e8e8);
 }
 
 .kb-key-province {
@@ -114,12 +114,12 @@ function onKey(key) {
 .kb-key-confirm {
   flex: 1 1 0;
   height: 44px;
-  background: #1989fa;
+  background: var(--np-brand, #1989fa);
   color: #fff;
   font-size: 17px;
 }
 
 .kb-key-confirm:active {
-  background: #1472d4;
+  background: var(--np-brand-strong, #1472d4);
 }
 </style>

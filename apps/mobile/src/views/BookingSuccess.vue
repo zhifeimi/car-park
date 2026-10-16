@@ -1,54 +1,50 @@
 <template>
   <div class="page">
-    <div class="header-bar">
-      <div class="header-placeholder" />
-      <div class="lang-switch">
-        <button
-          :class="['lang-btn', { active: locale === 'en' }]"
-          @click="setLocale('en')"
-        >
-          EN
-        </button>
-        <span class="lang-sep">/</span>
-        <button
-          :class="['lang-btn', { active: locale === 'zh-CN' }]"
-          @click="setLocale('zh-CN')"
-        >
-          中文
-        </button>
+    <header class="signboard">
+      <div>
+        <p v-if="siteName" class="signboard-eyebrow">{{ siteName }}</p>
+        <h1 class="signboard-title">{{ t('success.title') }}</h1>
       </div>
-    </div>
+      <lang-switch />
+    </header>
 
     <div class="form">
-      <div class="qr-card">
-        <template v-if="booking.id">
-          <div class="mark">{{ display.label }}</div>
+      <article v-if="booking.id" :class="['pass', `is-${display.state}`]">
+        <div class="pass-head">
+          <span class="pass-status">{{ display.label }}</span>
+          <span class="pass-date">{{ booking.bookingDate }}</span>
+        </div>
+        <div class="pass-body">
+          <div class="pass-park">{{ booking.park }}</div>
           <template v-if="display.canShowQr">
-            <div class="notice">{{ t('success.notice1') }}</div>
-            <div class="notice">{{ t('success.notice2') }}</div>
             <img v-if="qrDataUrl" :src="qrDataUrl" class="qr-image" alt="QR Code" />
+            <p class="pass-notice">{{ t('success.notice1') }}<br />{{ t('success.notice2') }}</p>
           </template>
-          <van-button
-            v-if="display.canShowCancellationControl"
-            type="primary"
-            :disabled="submitting"
-            class="cancel-button"
-            round
-            @click="cancelBooking"
-          >
-            {{ t('success.cancelBooking') }}
-          </van-button>
-        </template>
-        <van-empty v-else :description="t('success.noRecord')" />
-      </div>
-    </div>
+        </div>
+        <div class="pass-tear" aria-hidden="true" />
+        <dl class="pass-details">
+          <div>
+            <dt>{{ t('success.carPlate') }}</dt>
+            <dd><span class="plate">{{ booking.carPlate }}</span></dd>
+          </div>
+          <div>
+            <dt>{{ t('success.phone') }}</dt>
+            <dd>{{ booking.cellPhone }}</dd>
+          </div>
+        </dl>
+      </article>
+      <van-empty v-else :description="t('success.noRecord')" />
 
-    <div class="form">
-      <div v-if="booking.id" class="detail-card">
-        <van-cell :title="t('success.bookingDate')" :value="booking.bookingDate" />
-        <van-cell :title="t('success.carPlate')" :value="booking.carPlate" />
-        <van-cell :title="t('success.phone')" :value="booking.cellPhone" />
-      </div>
+      <van-button
+        v-if="booking.id && display.canShowCancellationControl"
+        type="danger"
+        plain
+        block
+        :disabled="submitting"
+        @click="cancelBooking"
+      >
+        {{ t('success.cancelBooking') }}
+      </van-button>
     </div>
   </div>
 </template>
@@ -60,8 +56,9 @@ import { showFailToast, showSuccessToast } from 'vant'
 import { getLastBooking, updateBooking } from '@/api/parking'
 import { bookingLifecycleDisplay, generateQrPayload, PHONE_STORAGE_KEY } from '@car-park/utils'
 import { useI18n } from '@/locales'
+import LangSwitch from '@/components/LangSwitch.vue'
 
-const { locale, setLocale, t } = useI18n()
+const { locale, t, siteName } = useI18n()
 
 const booking = ref({})
 const submitting = ref(false)
@@ -135,85 +132,134 @@ onMounted(loadBooking)
   min-height: 100vh;
 }
 
-.header-bar {
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--np-space-4);
+  padding: var(--np-space-4);
+}
+
+/* A paper permit: status band, QR, tear line, vehicle stub. */
+.pass {
+  background: var(--np-surface);
+  border: 1px solid var(--np-line);
+  border-radius: var(--np-radius-lg);
+  overflow: hidden;
+}
+
+.pass-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 0;
+  gap: var(--np-space-3);
+  padding: var(--np-space-3) var(--np-space-4);
+  background: var(--np-neutral-soft);
+  color: var(--np-neutral);
 }
 
-.lang-switch {
-  display: inline-flex;
-  align-items: center;
-  background: #ebedf0;
-  padding: 2px 6px;
-  border-radius: 14px;
+.pass.is-active .pass-head {
+  background: var(--np-success-soft);
+  color: var(--np-success);
 }
 
-.lang-btn {
-  background: transparent;
-  border: none;
-  font-size: 12px;
-  font-weight: 500;
-  color: #646566;
-  padding: 2px 6px;
-  cursor: pointer;
-  border-radius: 10px;
-  transition: all 0.2s;
-}
-
-.lang-btn.active {
-  background: #fff;
-  color: #1989fa;
+.pass-status {
+  font-size: var(--np-text-lg);
   font-weight: 700;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.lang-sep {
-  color: #c8c9cc;
-  font-size: 11px;
-  margin: 0 1px;
+.pass-date {
+  font-size: var(--np-text-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
-.form {
-  padding: 16px;
-}
-
-.qr-card {
-  padding: 32px 16px;
-  border-radius: 12px;
-  background: #fff;
+.pass-body {
+  padding: var(--np-space-5) var(--np-space-4);
   text-align: center;
 }
 
-.mark {
-  font-size: 24px;
+.pass-park {
+  font-size: var(--np-text-xl);
   font-weight: 700;
-  line-height: 2;
-  color: #323233;
-}
-
-.notice {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.8;
-  color: #646566;
+  color: var(--np-ink);
 }
 
 .qr-image {
   display: block;
   width: 200px;
   height: 200px;
-  margin: 20px auto;
+  margin: var(--np-space-4) auto var(--np-space-3);
 }
 
-.cancel-button {
-  width: 80%;
-  margin-top: 8px;
+.pass-notice {
+  margin: 0;
+  font-size: var(--np-text-sm);
+  line-height: 1.6;
+  color: var(--np-ink-2);
 }
 
-.detail-card {
-  border-radius: 12px;
-  overflow: hidden;
+.pass-tear {
+  position: relative;
+  margin: 0 var(--np-space-4);
+  border-top: 2px dashed var(--np-line);
+}
+
+.pass-tear::before,
+.pass-tear::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--np-line);
+  border-radius: 50%;
+  background: var(--np-paper);
+}
+
+.pass-tear::before {
+  left: calc(-1 * var(--np-space-4) - 10px);
+}
+
+.pass-tear::after {
+  right: calc(-1 * var(--np-space-4) - 10px);
+}
+
+.pass-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--np-space-3);
+  margin: 0;
+  padding: var(--np-space-4);
+}
+
+.pass-details > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--np-space-3);
+}
+
+.pass-details dt {
+  font-size: var(--np-text-sm);
+  color: var(--np-ink-3);
+}
+
+.pass-details dd {
+  margin: 0;
+  font-size: var(--np-text-md);
+  font-weight: 600;
+  color: var(--np-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Outlined like a real number plate so staff match it at a glance. */
+.plate {
+  display: inline-block;
+  padding: 2px var(--np-space-2);
+  border: 2px solid var(--np-ink);
+  border-radius: var(--np-radius-sm);
+  font-size: var(--np-text-lg);
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 </style>
