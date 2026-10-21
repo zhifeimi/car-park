@@ -41,9 +41,18 @@ public abstract class DbIntegrationTest {
         deleteAllRows();
     }
 
-    /** Also callable from inside a test (e.g. between race rounds). */
+    /**
+     * Also callable from inside a test (e.g. between race rounds). Refuses to wipe anything but a
+     * {@code *_test} database: {@code localhost:3306} is also where the dev-DB tunnel lands.
+     */
     protected void deleteAllRows() {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        String database = jdbc.queryForObject("SELECT DATABASE()", String.class);
+        if (database == null || !database.endsWith("_test")) {
+            throw new IllegalStateException("Refusing to DELETE all rows in database '" + database
+                    + "': the @Tag(\"db\") suite only runs against a *_test database"
+                    + " (DB_URL in secrets/carpark-test.env).");
+        }
         jdbc.update("DELETE FROM cp_parking_booking");
         jdbc.update("DELETE FROM cp_park");
     }

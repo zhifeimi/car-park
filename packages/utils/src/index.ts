@@ -9,37 +9,41 @@ export interface QrPayload {
 }
 
 /**
- * 预约须知 — 社区出入通用指引 (Chinese & English)
+ * Mainland China plate: ordinary 7-char and new-energy 8-char forms. Strict
+ * client-side check for VITE_REGION=cn deployments; the server accepts the
+ * wider PLATE_REGEX.
  */
-export const NOTICE_LINES_ZH: readonly string[] = [
-  '1. 预约免费。入场时请向工作人员出示预约二维码，配合核验后有序停放。',
-  '2. 请如实填写车牌号与手机号，信息不符的车辆将无法入场。',
-  '3. 行程有变请及时取消预约，把车位让给有需要的居民。',
-  '4. 车位余量实时统计，约满即止；开放时段以现场公告为准。',
-]
-
-export const NOTICE_LINES_EN: readonly string[] = [
-  '1. Booking is free. Please present the QR code to staff upon entry and park in designated areas.',
-  '2. Please provide accurate license plate and mobile number. Mismatched vehicles will be denied entry.',
-  '3. If your schedule changes, please cancel your booking promptly to free up space for other residents.',
-  '4. Parking availability is updated in real time; opening hours are subject to on-site announcements.',
-]
-
-export const NOTICE_LINES: readonly string[] = NOTICE_LINES_ZH
-
-/**
- * Mainland China plate — ordinary 7-char and new-energy 8-char forms.
- * Must stay in sync with CN_PLATE_REGEX in the server DTOs
- * (press.mizhifei.parking.web.dto.ParkingDtos); the server re-validates.
- */
-export const PLATE_REGEX =
+export const CN_PLATE_REGEX =
   /^([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-HJ-NP-Z](([0-9]{5}[DF])|([DF][A-HJ-NP-Z0-9][0-9]{4})))|([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-HJ-NP-Z][A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9挂学警港澳])$/
 
-/** Mainland mobile number (11 digits starting with 13-19) */
-export const MOBILE_REGEX = /^1[3-9]\d{9}$/
+/** Mainland mobile number (11 digits starting with 13-19), VITE_REGION=cn. */
+export const CN_MOBILE_REGEX = /^1[3-9]\d{9}$/
+
+/**
+ * Any country's plate, the server's rule (PLATE_REGEX in ParkingDtos; same
+ * samples in validation.test.ts and ParkingDtosTest): letters of any script
+ * and digits, single inner spaces / hyphens / middle dots, 2-16 characters.
+ */
+export const PLATE_REGEX = /^[\p{L}\p{N}](?:[\p{L}\p{M}\p{N}]|[ \-·](?=[\p{L}\p{N}])){1,15}$/u
+
+/** E.164 international number, VITE_REGION=intl. The server also accepts CN_MOBILE_REGEX. */
+export const E164_REGEX = /^\+[1-9]\d{6,14}$/
+
+/** Plate as typed → canonical: trimmed, single spaces, upper case. */
+export function normalizePlate(plate: string): string {
+  return plate.trim().replace(/\s+/g, ' ').toUpperCase()
+}
+
+/** Phone as typed ("+44 7700 900123", "+1 (202) 555-0143") → "+447700900123". */
+export function normalizePhone(phone: string): string {
+  return phone.replace(/[\s\-().]/g, '')
+}
 
 /** LocalStorage key for remembering last used cell phone */
 export const PHONE_STORAGE_KEY = 'cellPhone'
+
+/** LocalStorage key for the plate of the last booking — /last needs phone + plate */
+export const PLATE_STORAGE_KEY = 'carPlate'
 
 /** Keyboard character definitions */
 export const PROVINCES: readonly string[] =
@@ -50,30 +54,7 @@ export const LETTERS_ROW_2: readonly string[] = 'MNPQRSTUVWXYZ'.split('')
 export const DIGITS: readonly string[] = '1234567890'.split('')
 
 export * from './booking-lifecycle-display.ts'
-
-/**
- * Validate Chinese license plate number
- */
-export function validateCarPlate(plate: string): boolean {
-  if (!plate || typeof plate !== 'string') return false
-  return PLATE_REGEX.test(plate.trim())
-}
-
-/**
- * Validate Chinese 11-digit mobile phone number
- */
-export function validatePhone(phone: string): boolean {
-  if (!phone || typeof phone !== 'string') return false
-  return MOBILE_REGEX.test(phone.trim())
-}
-
-/**
- * Check if the plate is a New Energy vehicle plate (8 characters)
- */
-export function isNewEnergyPlate(plate: string): boolean {
-  if (!validateCarPlate(plate)) return false
-  return plate.trim().length === 8
-}
+export * from './server-messages.ts'
 
 /**
  * Generate QR code JSON string payload for gate scanners

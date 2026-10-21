@@ -26,15 +26,18 @@ import press.mizhifei.parking.web.envelope.R;
  * <ul>
  *   <li>{@code POST /auth/login} (rate-limited)</li>
  *   <li>{@code GET /parking/park/list}, {@code GET /parking/park/leftLotNum}</li>
- *   <li>{@code GET /parking/booking/list}, {@code GET /parking/booking/last}</li>
- *   <li>{@code POST /parking/booking} (rate-limited), {@code PUT /parking/booking}</li>
+ *   <li>{@code GET /parking/booking/last} (rate-limited; phone + plate)</li>
+ *   <li>{@code POST /parking/booking}, {@code PUT /parking/booking} (both rate-limited; PUT is
+ *       cancel-only and needs the booking's phone)</li>
  *   <li>{@code GET /actuator/health}</li>
  * </ul>
  *
  * <p>Hardening deviations from the legacy config (which permitted wildcard
  * {@code /parking/park/*} and {@code /parking/booking/*} GETs — exposing
  * {@code statisticInfo} and per-id reads anonymously — and even
- * {@code PUT /parking/park}): every endpoint outside the list above now requires a token.
+ * {@code PUT /parking/park}): every endpoint outside the list above now requires a token —
+ * including {@code GET /parking/booking/list}, which the H5 never calls and which, unfiltered,
+ * dumped every plate and phone.
  * Swagger/springdoc (dev profile only) and all monitor consoles require authentication —
  * nothing of that kind is anonymously reachable.
  *
@@ -58,7 +61,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/parking/park/list",
                                 "/parking/park/leftLotNum",
-                                "/parking/booking/list",
                                 "/parking/booking/last").permitAll()
                         .requestMatchers(HttpMethod.POST, "/parking/booking").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/parking/booking").permitAll()

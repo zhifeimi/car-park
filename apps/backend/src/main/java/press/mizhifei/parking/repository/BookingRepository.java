@@ -21,8 +21,8 @@ import press.mizhifei.parking.web.dto.ParkBookingStat;
 public interface BookingRepository extends JpaRepository<ParkingBooking, Long>,
         JpaSpecificationExecutor<ParkingBooking> {
 
-    /** {@code GET /parking/booking/last} — latest booking for a phone, by create_time. */
-    Optional<ParkingBooking> findFirstByCellPhoneOrderByCreateTimeDesc(String cellPhone);
+    /** {@code GET /parking/booking/last} — latest booking for a phone + plate, by create_time. */
+    Optional<ParkingBooking> findFirstByCellPhoneAndCarPlateOrderByCreateTimeDesc(String cellPhone, String carPlate);
 
     /** Returns true if the car plate already has an active booking on the given date. */
     boolean existsByCarPlateAndBookingDateAndStatus(String carPlate, LocalDate bookingDate, BookingStatus status);

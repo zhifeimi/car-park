@@ -1,0 +1,97 @@
+/*
+ * Trailhead — park-neutral design tokens shared by the admin console and the
+ * mobile H5, for parks in any country. See ../DESIGN.md for rationale and
+ * how to brand a new park.
+ *
+ * A park picks a biome preset with <html data-park="…"> (set from
+ * VITE_PARK_THEME at build time); no attribute = forest. Only the six brand
+ * tokens vary per park. Status, ground and ink stay identical everywhere so
+ * gate staff read every deployment the same way.
+ *
+ * Explicit hex per preset on purpose: no color-mix() here, because older
+ * Android WebViews inside WeChat still load the public H5.
+ */
+:root {
+  /* brand: forest (default) */
+  --np-brand: #2f5d3a;
+  --np-brand-strong: #244a2e;
+  --np-brand-soft: #e6eee7;
+  --np-sign: #1f3527;
+  --np-on-sign: #f3eedf;
+  --np-on-sign-muted: #c9c2ae;
+
+  /* status, the same for every park */
+  --np-success: #276b43;
+  --np-success-soft: #e5f1e8;
+  --np-warning: #8a5a00;
+  --np-warning-soft: #fbf0d9;
+  --np-danger: #b42318;
+  --np-danger-soft: #fbe9e7;
+  --np-neutral: #5f635a;
+  --np-neutral-soft: #eceee9;
+
+  /* ground and ink: lichen-grey neutrals */
+  --np-paper: #f1f3ef;
+  --np-surface: #fff;
+  --np-sunken: #e4e8e1;
+  --np-ink: #1b201c;
+  --np-ink-2: #454b45;
+  --np-ink-3: #646a62;
+  --np-line: #d9ddd5;
+
+  /* type: system faces only (web fonts are blocked in mainland China and heavy
+     for CJK). No script-specific face is named, so the browser picks the right
+     Japanese / Korean / Thai / Arabic / Cyrillic fallback from <html lang>,
+     which both apps keep in sync with the chosen language. */
+  --np-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans",
+    "Helvetica Neue", Arial, sans-serif;
+  --np-text-xs: 12px;
+  --np-text-sm: 13px;
+  --np-text-md: 15px;
+  --np-text-lg: 17px;
+  --np-text-xl: 22px;
+  --np-text-2xl: 30px;
+
+  /* space: 4px grid */
+  --np-space-1: 4px;
+  --np-space-2: 8px;
+  --np-space-3: 12px;
+  --np-space-4: 16px;
+  --np-space-5: 24px;
+  --np-space-6: 32px;
+
+  /* shape */
+  --np-radius-sm: 4px;
+  --np-radius-md: 8px;
+  --np-radius-lg: 12px;
+  --np-shadow: 0 1px 2px rgba(27, 32, 28, 0.08);
+  --np-tap: 48px;
+}
+
+/* Simplified Chinese names its faces: otherwise a Japanese-locale Windows can
+   render Han characters with Japanese glyph forms. */
+:root:lang(zh-CN) {
+  --np-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+}
+
+:root[data-park="canyon"] {
+  --np-brand: #7b4a2d;
+  --np-brand-strong: #623a23;
+  --np-brand-soft: #f3eae3;
+  --np-sign: #3b271b;
+}
+
+:root[data-park="glacier"] {
+  --np-brand: #245c7a;
+  --np-brand-strong: #1b4a63;
+  --np-brand-soft: #e3eef3;
+  --np-sign: #17323f;
+}
+
+:root[data-park="coast"] {
+  --np-brand: #1e6b66;
+  --np-brand-strong: #175651;
+  --np-brand-soft: #e1f0ee;
+  --np-sign: #133b38;
+}

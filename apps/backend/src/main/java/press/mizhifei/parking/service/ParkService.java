@@ -1,5 +1,7 @@
 package press.mizhifei.parking.service;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -24,9 +26,11 @@ import press.mizhifei.parking.web.envelope.TableData;
 public class ParkService {
 
     private final ParkRepository parkRepository;
+    private final Clock clock;
 
-    public ParkService(ParkRepository parkRepository) {
+    public ParkService(ParkRepository parkRepository, Clock clock) {
         this.parkRepository = parkRepository;
+        this.clock = clock;
     }
 
     /**
@@ -37,7 +41,7 @@ public class ParkService {
         Page<ParkListRow> page = parkRepository.search(
                 criteria.name(), criteria.lotNum(),
                 criteria.openDateBegin(), criteria.openDateEnd(),
-                criteria.openTime(), criteria.closeTime(),
+                criteria.openTime(), criteria.closeTime(), LocalDate.now(clock),
                 criteria.toPageable());
         return new TableData(page.getTotalElements(), page.getContent());
     }
@@ -57,7 +61,7 @@ public class ParkService {
         return parkRepository.search(
                 criteria.name(), criteria.lotNum(),
                 criteria.openDateBegin(), criteria.openDateEnd(),
-                criteria.openTime(), criteria.closeTime(),
+                criteria.openTime(), criteria.closeTime(), LocalDate.now(clock),
                 org.springframework.data.domain.Pageable.unpaged()).getContent();
     }
 

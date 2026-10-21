@@ -34,7 +34,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
   jackson:
-    time-zone: Asia/Shanghai
+    # The park's clock. Set TZ (e.g. TZ=Europe/Oslo) on the backend process. This one
+    # property is the zone of the parkClock bean (JpaAuditingConfig) — "today" for
+    # booking checks and availability, and audit timestamps — and of Jackson. The
+    # host's default zone is never consulted, so an unset TZ in a UTC container
+    # still means this default, not UTC.
+    time-zone: ${TZ:Australia/Sydney}
     # Jackson 3 (Boot 4) moved the date/time feature flags from
     # SerializationFeature to DateTimeFeature — this is what used to be
     # spring.jackson.serialization.write-dates-as-timestamps.

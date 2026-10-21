@@ -1,6 +1,7 @@
 package press.mizhifei.parking.repository;
 
 import jakarta.persistence.LockModeType;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -37,6 +38,10 @@ public interface ParkRepository extends JpaRepository<Park, Long> {
      * on cpb.booking_date = curdate() and cpb.park = cp.name and cpb.status = 0
      * group by cp.id}.
      *
+     * <p>{@code today} is passed in rather than read with {@code curdate()}: the database clock
+     * may run in another zone (UTC on a cloud MySQL), and the park's day is the backend {@code TZ},
+     * the same clock {@code BookingService} checks dates against.
+     *
      * <p>Filters mirror the legacy {@code <if>} blocks exactly: {@code name} LIKE, all others
      * <em>equality</em>. Two deliberate fixes of legacy latent bugs: (1) the legacy XML placed
      * {@code <where>} after {@code group by} (invalid SQL, only "worked" because filters were
@@ -64,7 +69,7 @@ public interface ParkRepository extends JpaRepository<Park, Long> {
                    cp.update_time as updateTime
             from cp_park cp
                      left join cp_parking_booking cpb
-                               on cpb.booking_date = curdate()
+                               on cpb.booking_date = :today
                                    and cpb.park = cp.name
                                    and cpb.status = 0
             where (:name is null or cp.name like concat('%', :name, '%'))
@@ -90,6 +95,7 @@ public interface ParkRepository extends JpaRepository<Park, Long> {
                              @Param("openDateEnd") String openDateEnd,
                              @Param("openTime") String openTime,
                              @Param("closeTime") String closeTime,
+                             @Param("today") LocalDate today,
                              Pageable pageable);
 
     /**
@@ -108,11 +114,4 @@ public interface ParkRepository extends JpaRepository<Park, Long> {
                       and cpb.status = 0)""",
             nativeQuery = true)
     Integer leftLotNum(@Param("park") String park, @Param("date") String date);
-
-    /** For the Excel exporter: full list, no paging, same computation as {@link #search}. */
-    default List<ParkListRow> searchAll(String name, Long lotNum, String openDateBegin,
-                                        String openDateEnd, String openTime, String closeTime) {
-        return search(name, lotNum, openDateBegin, openDateEnd, openTime, closeTime,
-                Pageable.unpaged()).getContent();
-    }
 }
