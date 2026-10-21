@@ -31,6 +31,7 @@ docker compose up -d                                 # mysql:9.7, seeds from app
 # Remote dev MySQL (dev-db.example.com — Docker mysql:9.7, loopback-only publish,
 # carpark account REQUIRE SSL, seeds from the same db/ scripts; compose project /opt/example-carpark-mysql)
 ./scripts/db-tunnel.sh                               # tunnel — the ONLY way in (needs local :3306 free)
+./scripts/seed-db.sh                                 # idempotent schema+data.sql via the tunnel (TLS); password from secrets/carpark.txt (CARPARK_DB_PASSWORD_FILE), CARPARK_DB_SSL_CA to verify the cert
 cd apps/backend && SPRING_DATASOURCE_URL='jdbc:mysql://127.0.0.1:3306/carpark?...&useSSL=true&requireSSL=true&verifyServerCertificate=false' \
   SPRING_DATASOURCE_USERNAME=carpark SPRING_DATASOURCE_PASSWORD='<server ~/.config/carpark/carpark.env>' \
   ./mvnw spring-boot:run
