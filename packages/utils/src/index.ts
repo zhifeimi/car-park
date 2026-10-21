@@ -42,6 +42,9 @@ export function normalizePhone(phone: string): string {
 /** LocalStorage key for remembering last used cell phone */
 export const PHONE_STORAGE_KEY = 'cellPhone'
 
+/** LocalStorage key for the plate of the last booking — /last needs phone + plate */
+export const PLATE_STORAGE_KEY = 'carPlate'
+
 /** Keyboard character definitions */
 export const PROVINCES: readonly string[] =
   '京津冀晋蒙辽吉黑沪苏浙皖闽赣鲁豫鄂湘粤桂琼渝川贵云藏陕甘青宁新'.split('')

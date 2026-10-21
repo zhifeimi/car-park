@@ -24,10 +24,11 @@ import press.mizhifei.parking.web.envelope.R;
 import press.mizhifei.parking.web.envelope.TableData;
 
 /**
- * 停车预约. Public surface (citizen H5): list, last, create, update (cancel).
- * statisticInfo, delete and export require an admin token; the legacy per-id read
- * ({@code GET /{id}}) was deleted with the anonymous-surface tightening (issue 02) —
- * the success page loads by phone via {@code /last}.
+ * 停车预约. Public surface (citizen H5): last, create, update (cancel).
+ * list, statisticInfo, delete and export require an admin token — an anonymous unfiltered
+ * list was a full dump of every plate and phone. The legacy per-id read ({@code GET /{id}})
+ * was deleted with the anonymous-surface tightening (issue 02) — the success page loads by
+ * phone + plate via {@code /last}.
  */
 @RestController
 @RequestMapping("/parking/booking")
@@ -42,16 +43,16 @@ public class BookingController {
         this.exportService = exportService;
     }
 
-    /** Public. Equality filters + legacy sort order; paged when pageNum/pageSize present. */
+    /** Admin. Equality filters + legacy sort order; paged when pageNum/pageSize present. */
     @GetMapping("/list")
     public TableData list(BookingCriteria criteria) {
         return bookingService.list(criteria);
     }
 
-    /** Public. Latest booking for a phone (by create_time) — the success page reloads by phone. */
+    /** Public, rate-limited. Latest booking for a phone + plate (by create_time) — the success page reload. */
     @GetMapping("/last")
-    public R<ParkingBooking> last(@RequestParam String cellPhone) {
-        return R.ok(bookingService.lastByCellPhone(cellPhone));
+    public R<ParkingBooking> last(@RequestParam String cellPhone, @RequestParam String carPlate) {
+        return R.ok(bookingService.lastBooking(cellPhone, carPlate));
     }
 
     /** Public, rate-limited. Server validates availability/invariants and sets {@code status=0}. */
@@ -67,7 +68,7 @@ public class BookingController {
         return R.ok(confirmation.id());
     }
 
-    /** Public. Partial update (non-null fields only); cancel = {@code status:-1}. */
+    /** Public, rate-limited. Cancel only: {@code {id, cellPhone, status:-1}}, phone must match the booking. */
     @PutMapping
     public R<Void> edit(@Valid @RequestBody BookingUpdateRequest request) {
         bookingService.update(request);

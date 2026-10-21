@@ -91,7 +91,7 @@ VITE_SITE_NAME=武夷山国家公园 VITE_SITE_NAME_EN='Wuyishan National Park' 
 | `VITE_SITE_NAME` | Eyebrow above the H5 titles, the admin login heading, and the browser tab titles |
 | `VITE_SITE_NAME_EN` | Site name shown when the visitor picks English. Falls back to `VITE_SITE_NAME` |
 | `VITE_PARK_THEME` | `forest` \| `canyon` \| `glacier` \| `coast`. Sets `<html data-park>` |
-| `TZ` (backend process) | The park's clock, for example `TZ=Pacific/Auckland`. "Today" for booking checks and audit timestamps follow it. Defaults to the host zone, and Jackson defaults to `Asia/Shanghai` |
+| `TZ` (backend process) | The park's clock, for example `TZ=Pacific/Auckland`. "Today" for booking checks and availability, audit timestamps and JSON dates all follow it. Unset, it defaults to `Australia/Sydney` — the host zone is never used |
 
 The variables never change the API contract, the gate QR payload (`{车牌号,手机号,停车场,日期}`, whose keys stay Chinese because gate scanners parse them), or the mobile `/mobile/` + `/prod-api` layout.
 

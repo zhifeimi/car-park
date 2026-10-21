@@ -40,16 +40,17 @@ export const getLeftLotNum = (park, date) =>
     (body) => body.data,
   )
 
-/** GET /parking/booking/last?cellPhone= → the caller's most recent booking (may be null).
- *  The success page loads exclusively through this endpoint — there is no anonymous
- *  per-id read (GET /parking/booking/{id} was removed with the wildcard tightening). */
-export const getLastBooking = (cellPhone) =>
-  unwrap(http.get('/parking/booking/last', { params: { cellPhone } })).then(
+/** GET /parking/booking/last?cellPhone=&carPlate= → the caller's most recent booking for
+ *  that phone + plate (may be null). The success page loads exclusively through this
+ *  endpoint — there is no anonymous per-id read (GET /parking/booking/{id} was removed
+ *  with the wildcard tightening). */
+export const getLastBooking = (cellPhone, carPlate) =>
+  unwrap(http.get('/parking/booking/last', { params: { cellPhone, carPlate } })).then(
     (body) => body.data,
   )
 
 /** POST /parking/booking — server forces status=0. */
 export const addBooking = (data) => unwrap(http.post('/parking/booking', data))
 
-/** PUT /parking/booking — partial update; cancel = { id, status: -1 }. */
+/** PUT /parking/booking — cancel only: { id, cellPhone, status: -1 } (phone must match). */
 export const updateBooking = (data) => unwrap(http.put('/parking/booking', data))

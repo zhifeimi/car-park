@@ -54,7 +54,12 @@ import { computed, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import { showFailToast, showSuccessToast } from 'vant'
 import { getLastBooking, updateBooking } from '@/api/parking'
-import { bookingLifecycleDisplay, generateQrPayload, PHONE_STORAGE_KEY } from '@car-park/utils'
+import {
+  bookingLifecycleDisplay,
+  generateQrPayload,
+  PHONE_STORAGE_KEY,
+  PLATE_STORAGE_KEY,
+} from '@car-park/utils'
 import { useI18n } from '@/locales'
 import LangSwitch from '@/components/LangSwitch.vue'
 
@@ -90,16 +95,17 @@ async function refreshQr() {
 }
 
 /**
- * The booking is always loaded by phone via /parking/booking/last — the anonymous
- * surface has no per-id read (GET /parking/booking/{id} is gone; see issue 02). The
- * phone is stored by BookingAdd before navigating, so submit-redirects and reloads
+ * The booking is always loaded by phone + plate via /parking/booking/last — the
+ * anonymous surface has no per-id read (GET /parking/booking/{id} is gone; see issue 02).
+ * Both are stored by BookingAdd before navigating, so submit-redirects and reloads
  * take this same single path.
  */
 async function loadBooking() {
   const cellPhone = localStorage.getItem(PHONE_STORAGE_KEY)
-  if (!cellPhone) return
+  const carPlate = localStorage.getItem(PLATE_STORAGE_KEY)
+  if (!cellPhone || !carPlate) return
   try {
-    const last = await getLastBooking(cellPhone)
+    const last = await getLastBooking(cellPhone, carPlate)
     booking.value = last || {}
     await refreshQr()
   } catch {
@@ -112,7 +118,8 @@ async function cancelBooking() {
   booking.value.status = -1 // optimistic, matches the legacy UI behavior
   submitting.value = true
   try {
-    await updateBooking({ id: booking.value.id, status: -1 })
+    // the server cancels only with the booking's own phone
+    await updateBooking({ id: booking.value.id, cellPhone: booking.value.cellPhone, status: -1 })
     showSuccessToast(t('success.cancelSuccess'))
   } catch (err) {
     // recovery: restore UI state and refetch the truth from the server

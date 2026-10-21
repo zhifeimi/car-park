@@ -119,6 +119,7 @@ import {
   normalizePlate,
   PHONE_STORAGE_KEY,
   PLATE_REGEX,
+  PLATE_STORAGE_KEY,
 } from '@car-park/utils'
 import { useI18n } from '@/locales'
 import LangSwitch from '@/components/LangSwitch.vue'
@@ -259,9 +260,10 @@ async function submit() {
   }
   submitting.value = true
   try {
-    // The success page loads the booking by phone via /parking/booking/last
-    // (legacy flow), so the phone must be stored before navigating.
+    // The success page loads the booking by phone + plate via /parking/booking/last,
+    // so both must be stored before navigating.
     localStorage.setItem(PHONE_STORAGE_KEY, form.cellPhone)
+    localStorage.setItem(PLATE_STORAGE_KEY, form.carPlate)
     await addBooking({
       carPlate: form.carPlate,
       cellPhone: form.cellPhone,

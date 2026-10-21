@@ -12,19 +12,21 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 
 /**
- * Per-client-IP rate limiting (bucket4j) on the two abuse-prone anonymous POSTs:
- * {@code POST /auth/login} (brute force) and {@code POST /parking/booking} (booking spam).
- * Exceeding a limit yields HTTP 429 with the standard envelope:
+ * Per-client-IP rate limiting (bucket4j) on the abuse-prone anonymous endpoints:
+ * {@code POST /auth/login} (brute force), {@code POST /parking/booking} (booking spam),
+ * {@code PUT /parking/booking} (mass cancel) and {@code GET /parking/booking/last} (lookup
+ * enumeration). Exceeding a limit yields HTTP 429 with the standard envelope:
  * {@code {code:429, msg:"请求过于频繁，请稍后再试"}}.
  *
  * <p>In-memory only — correct because the system runs as a single instance (documented; the
- * legacy Redis dependency was deliberately eliminated). Client IP honours the first hop of
- * {@code X-Forwarded-For} (the app sits behind nginx; {@code forward-headers-strategy: native}
- * is set).
+ * legacy Redis dependency was deliberately eliminated). The client IP is
+ * {@link HttpServletRequest#getRemoteAddr()}: with {@code forward-headers-strategy: native},
+ * Tomcat's RemoteIpValve has already resolved it from {@code X-Forwarded-For}, skipping only
+ * trusted internal proxies — never the client-controlled first hop, which a caller could
+ * rotate for a fresh bucket per request.
  */
 public class RateLimitFilter implements Filter {
 
@@ -43,49 +45,32 @@ public class RateLimitFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
-        if (HttpMethod.POST.matches(req.getMethod())) {
-            String path = req.getRequestURI();
-            Integer limit = limitFor(path);
-            if (limit != null) {
-                pruneIfNeeded();
-                Bucket bucket = buckets.computeIfAbsent(limitKey(path, clientIp(req)),
-                        k -> Bucket.builder()
-                                .addLimit(l -> l.capacity(limit).refillGreedy(limit, Duration.ofMinutes(1)))
-                                .build());
-                if (!bucket.tryConsume(1)) {
-                    HttpServletResponse resp = (HttpServletResponse) response;
-                    resp.setStatus(429);
-                    resp.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                    resp.getWriter().write("{\"code\":429,\"msg\":\"请求过于频繁，请稍后再试\",\"data\":null}");
-                    return;
-                }
+        String route = req.getMethod() + ' ' + req.getRequestURI();
+        Integer limit = limitFor(route);
+        if (limit != null) {
+            pruneIfNeeded();
+            Bucket bucket = buckets.computeIfAbsent(route + ' ' + req.getRemoteAddr(),
+                    k -> Bucket.builder()
+                            .addLimit(l -> l.capacity(limit).refillGreedy(limit, Duration.ofMinutes(1)))
+                            .build());
+            if (!bucket.tryConsume(1)) {
+                HttpServletResponse resp = (HttpServletResponse) response;
+                resp.setStatus(429);
+                resp.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                resp.getWriter().write("{\"code\":429,\"msg\":\"请求过于频繁，请稍后再试\",\"data\":null}");
+                return;
             }
         }
         chain.doFilter(request, response);
     }
 
-    private Integer limitFor(String path) {
-        if ("/auth/login".equals(path)) {
-            return loginPerMinute;
-        }
-        if ("/parking/booking".equals(path)) {
-            return bookingPerMinute;
-        }
-        return null;
-    }
-
-    private String limitKey(String path, String ip) {
-        return path + ':' + ip;
-    }
-
-    private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            int comma = forwarded.indexOf(',');
-            return (comma > 0 ? forwarded.substring(0, comma) : forwarded).trim();
-        }
-        return request.getRemoteAddr();
+    private Integer limitFor(String route) {
+        return switch (route) {
+            case "POST /auth/login" -> loginPerMinute;
+            case "POST /parking/booking", "PUT /parking/booking", "GET /parking/booking/last" -> bookingPerMinute;
+            default -> null;
+        };
     }
 
     /** Crude memory guard: drop all buckets if the map grows without bound. */
