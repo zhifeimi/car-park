@@ -2,16 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "echo 'deps resolve through deno.json at build time'",
-  "buildCommand": "npx -y deno@2 task build",
+  "buildCommand": "npx -y deno@2 task build --base /",
   "outputDirectory": "dist",
   "routes": [
-    {
-      "src": "^/$",
-      "status": 307,
-      "headers": {
-        "Location": "/mobile/"
-      }
-    },
     {
       "src": "^/prod-api/(.*)$",
       "dest": "https://api.carpark.zhifei.org/$1",
@@ -30,12 +23,18 @@
       ]
     },
     {
-      "src": "^/mobile/?$",
-      "dest": "/index.html"
+      "src": "^/mobile(/.*)?$",
+      "status": 308,
+      "headers": {
+        "Location": "/"
+      }
     },
     {
-      "src": "^/mobile/(.+)$",
-      "dest": "/$1"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
