@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo 'deps resolve through deno.json at build time'",
+  "buildCommand": "npx -y deno@2 task build",
+  "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/", "destination": "/mobile/", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/prod-api/:path*", "destination": "https://api.carpark.zhifei.org/:path*" },
+    { "source": "/mobile/:path*", "destination": "/:path*" }
+  ]
+}
