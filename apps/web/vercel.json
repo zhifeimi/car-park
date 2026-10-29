@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo 'deps resolve through deno.json at build time'",
+  "buildCommand": "VITE_APP_BASE_API=/prod-api npx -y deno@2 task build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/prod-api/:path*", "destination": "https://carpark-api.phenixmee.serv00.net/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
