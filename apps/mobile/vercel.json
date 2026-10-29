@@ -2,15 +2,39 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "echo 'deps resolve through deno.json at build time'",
-  "buildCommand": "npx -y deno@2 task build",
+  "buildCommand": "npx -y deno@2 task build --base /",
   "outputDirectory": "dist",
-  "redirects": [
-    { "source": "/", "destination": "/mobile/", "permanent": false }
-  ],
-  "rewrites": [
-    { "source": "/prod-api/:path*", "destination": "https://api.carpark.zhifei.org/:path*" },
-    { "source": "/mobile", "destination": "/index.html" },
-    { "source": "/mobile/", "destination": "/index.html" },
-    { "source": "/mobile/:path+", "destination": "/:path+" }
+  "routes": [
+    {
+      "src": "^/prod-api/(.*)$",
+      "dest": "https://api.carpark.zhifei.org/$1",
+      "transforms": [
+        {
+          "type": "request.headers",
+          "op": "set",
+          "target": {
+            "key": "x-proxy-secret"
+          },
+          "args": "$RATE_LIMIT_PROXY_SECRET",
+          "env": [
+            "RATE_LIMIT_PROXY_SECRET"
+          ]
+        }
+      ]
+    },
+    {
+      "src": "^/mobile(/.*)?$",
+      "status": 308,
+      "headers": {
+        "Location": "/"
+      }
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }

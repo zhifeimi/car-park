@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,6 +34,14 @@ import org.springframework.web.util.UrlPathHelper;
  * trusted internal proxies — never the client-controlled first hop, which a caller could
  * rotate for a fresh bucket per request.
  *
+ * <p>The frontends call the API through a Vercel rewrite, so the address Tomcat resolves is a
+ * Vercel egress IP — a pool that rotates per request, which made the limit unenforceable for
+ * proxied traffic. When the request carries {@code X-Proxy-Secret} equal to the configured
+ * {@code app.rate-limit.proxy-secret} (Vercel sets it with a {@code request.headers} transform,
+ * overwriting any client value), the client is {@code X-Vercel-Forwarded-For}, which Vercel
+ * always overwrites with the connecting address. Without a matching secret both headers are
+ * ignored, so a direct caller cannot pick its own key.
+ *
  * <p>Three ways around a per-address limit are closed here:
  * <ul>
  *   <li><b>Path spelling.</b> The route is the decoded, normalized path (what Spring Security and
@@ -52,10 +61,13 @@ public class RateLimitFilter implements Filter {
     private static final Duration PERIOD = Duration.ofMinutes(1);
     private static final long SWEEP_INTERVAL_NANOS = Duration.ofSeconds(10).toNanos();
     private static final String OVERFLOW_CLIENT = "overflow";
+    static final String PROXY_SECRET_HEADER = "X-Proxy-Secret";
+    static final String PROXIED_CLIENT_HEADER = "X-Vercel-Forwarded-For";
 
     private final int loginPerMinute;
     private final int bookingPerMinute;
     private final int maxTrackedClients;
+    private final byte[] proxySecret;
     private final LongSupplier nanoTime;
     private final ConcurrentHashMap<String, Tracked> buckets = new ConcurrentHashMap<>();
     private final AtomicLong lastSweep;
@@ -65,12 +77,27 @@ public class RateLimitFilter implements Filter {
     }
 
     public RateLimitFilter(int loginPerMinute, int bookingPerMinute) {
-        this(loginPerMinute, bookingPerMinute, MAX_TRACKED_CLIENTS, System::nanoTime);
+        this(loginPerMinute, bookingPerMinute, null);
+    }
+
+    /** {@code proxySecret} blank = trust no proxy header; otherwise at least 32 characters. */
+    public RateLimitFilter(int loginPerMinute, int bookingPerMinute, String proxySecret) {
+        this(loginPerMinute, bookingPerMinute, proxySecret, MAX_TRACKED_CLIENTS, System::nanoTime);
     }
 
     RateLimitFilter(int loginPerMinute, int bookingPerMinute, int maxTrackedClients, LongSupplier nanoTime) {
+        this(loginPerMinute, bookingPerMinute, null, maxTrackedClients, nanoTime);
+    }
+
+    private RateLimitFilter(int loginPerMinute, int bookingPerMinute, String proxySecret,
+                            int maxTrackedClients, LongSupplier nanoTime) {
+        if (proxySecret != null && !proxySecret.isBlank() && proxySecret.length() < 32) {
+            throw new IllegalArgumentException("app.rate-limit.proxy-secret must be at least 32 characters");
+        }
         this.loginPerMinute = loginPerMinute;
         this.bookingPerMinute = bookingPerMinute;
+        this.proxySecret = proxySecret == null || proxySecret.isBlank()
+                ? null : proxySecret.getBytes(StandardCharsets.UTF_8);
         this.maxTrackedClients = maxTrackedClients;
         this.nanoTime = nanoTime;
         this.lastSweep = new AtomicLong(nanoTime.getAsLong() - SWEEP_INTERVAL_NANOS);
@@ -82,7 +109,7 @@ public class RateLimitFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         String route = req.getMethod() + ' ' + routePath(req);
         Integer limit = limitFor(route);
-        if (limit != null && !bucketFor(route, clientKey(req.getRemoteAddr()), limit).tryConsume(1)) {
+        if (limit != null && !bucketFor(route, clientKey(clientAddress(req)), limit).tryConsume(1)) {
             HttpServletResponse resp = (HttpServletResponse) response;
             resp.setStatus(429);
             resp.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -91,6 +118,19 @@ public class RateLimitFilter implements Filter {
             return;
         }
         chain.doFilter(request, response);
+    }
+
+    /** The trusted proxy's client header when the secret matches, else the resolved remote address. */
+    String clientAddress(HttpServletRequest req) {
+        String secret = req.getHeader(PROXY_SECRET_HEADER);
+        if (proxySecret != null && secret != null
+                && MessageDigest.isEqual(proxySecret, secret.getBytes(StandardCharsets.UTF_8))) {
+            String client = req.getHeader(PROXIED_CLIENT_HEADER);
+            if (client != null && !client.isBlank()) {
+                return client.split(",", 2)[0].strip();
+            }
+        }
+        return req.getRemoteAddr();
     }
 
     /**

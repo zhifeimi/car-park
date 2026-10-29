@@ -4,8 +4,9 @@ import BookingAdd from '@/views/BookingAdd.vue'
 import BookingSuccess from '@/views/BookingSuccess.vue'
 import { getLocale, siteName, t } from '@/locales'
 
-// Hash history + '/mobile/' base = parity with the deployed H5
-// (park.example.com/mobile/, hash mode in the legacy uni-app manifest).
+// Hash history + Vite's base ('/mobile/' by default) = parity with the deployed H5
+// (park.example.com/mobile/, hash mode in the legacy uni-app manifest). The Vercel
+// build passes --base / to serve from the domain root.
 const routes = [
   {
     path: '/',
@@ -22,7 +23,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHashHistory('/mobile/'),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes,
 })
 
