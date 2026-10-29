@@ -9,6 +9,8 @@
   ],
   "rewrites": [
     { "source": "/prod-api/:path*", "destination": "https://api.carpark.zhifei.org/:path*" },
-    { "source": "/mobile/:path*", "destination": "/:path*" }
+    { "source": "/mobile", "destination": "/index.html" },
+    { "source": "/mobile/", "destination": "/index.html" },
+    { "source": "/mobile/:path+", "destination": "/:path+" }
   ]
 }
