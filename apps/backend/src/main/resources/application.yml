@@ -76,3 +76,6 @@ app:
   rate-limit:
     login-per-minute: 5
     booking-per-minute: 10
+    # Shared secret the Vercel rewrites send as X-Proxy-Secret; when it matches, the client
+    # is X-Vercel-Forwarded-For instead of Vercel's rotating egress IP. Unset = trust no proxy.
+    proxy-secret: ${RATE_LIMIT_PROXY_SECRET:}

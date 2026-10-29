@@ -38,9 +38,10 @@ public class FilterConfig {
     @Bean
     public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(
             @Value("${app.rate-limit.login-per-minute:5}") int loginPerMinute,
-            @Value("${app.rate-limit.booking-per-minute:10}") int bookingPerMinute) {
+            @Value("${app.rate-limit.booking-per-minute:10}") int bookingPerMinute,
+            @Value("${app.rate-limit.proxy-secret:}") String proxySecret) {
         FilterRegistrationBean<RateLimitFilter> registration =
-                new FilterRegistrationBean<>(new RateLimitFilter(loginPerMinute, bookingPerMinute));
+                new FilterRegistrationBean<>(new RateLimitFilter(loginPerMinute, bookingPerMinute, proxySecret));
         registration.addUrlPatterns("/*");
         registration.setName("rateLimitFilter");
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);

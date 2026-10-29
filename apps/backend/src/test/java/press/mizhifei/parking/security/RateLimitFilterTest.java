@@ -113,4 +113,45 @@ class RateLimitFilterTest {
         call(small, "POST", "/auth/login", "198.51.100.3", null);
         assertThat(small.trackedClients()).isEqualTo(1);
     }
+
+    private static final String SECRET = "s".repeat(32);
+
+    private static int proxied(RateLimitFilter filter, String secret, String client) throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/login");
+        request.setRemoteAddr("76.76.21.21"); // a Vercel egress address, the same for everyone here
+        if (secret != null) {
+            request.addHeader(RateLimitFilter.PROXY_SECRET_HEADER, secret);
+        }
+        request.addHeader(RateLimitFilter.PROXIED_CLIENT_HEADER, client);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(request, response, new MockFilterChain());
+        return response.getStatus();
+    }
+
+    @Test
+    void trustedProxy_keysOnTheForwardedClient() throws Exception {
+        RateLimitFilter proxiedFilter = new RateLimitFilter(2, 2, SECRET);
+        proxied(proxiedFilter, SECRET, "203.0.113.7");
+        proxied(proxiedFilter, SECRET, "203.0.113.7");
+        assertThat(proxied(proxiedFilter, SECRET, "203.0.113.7")).isEqualTo(429);
+        assertThat(proxied(proxiedFilter, SECRET, "198.51.100.9")).isEqualTo(200);
+    }
+
+    @Test
+    void proxyHeaders_withoutTheSecret_areIgnored() throws Exception {
+        RateLimitFilter proxiedFilter = new RateLimitFilter(2, 2, SECRET);
+        assertThat(proxied(proxiedFilter, "wrong", "10.0.0.1")).isEqualTo(200);
+        assertThat(proxied(proxiedFilter, null, "10.0.0.2")).isEqualTo(200);
+        assertThat(proxied(proxiedFilter, "wrong", "10.0.0.3")).isEqualTo(429);
+        // unconfigured: even the "right" secret is not trusted
+        proxied(filter, SECRET, "10.0.0.4");
+        proxied(filter, SECRET, "10.0.0.5");
+        assertThat(proxied(filter, SECRET, "10.0.0.6")).isEqualTo(429);
+    }
+
+    @Test
+    void shortProxySecret_isRejected() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new RateLimitFilter(2, 2, "short"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

@@ -4,8 +4,30 @@
   "installCommand": "echo 'deps resolve through deno.json at build time'",
   "buildCommand": "VITE_APP_BASE_API=/prod-api npx -y deno@2 task build",
   "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/prod-api/:path*", "destination": "https://api.carpark.zhifei.org/:path*" },
-    { "source": "/(.*)", "destination": "/index.html" }
+  "routes": [
+    {
+      "src": "^/prod-api/(.*)$",
+      "dest": "https://api.carpark.zhifei.org/$1",
+      "transforms": [
+        {
+          "type": "request.headers",
+          "op": "set",
+          "target": {
+            "key": "x-proxy-secret"
+          },
+          "args": "$RATE_LIMIT_PROXY_SECRET",
+          "env": [
+            "RATE_LIMIT_PROXY_SECRET"
+          ]
+        }
+      ]
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
