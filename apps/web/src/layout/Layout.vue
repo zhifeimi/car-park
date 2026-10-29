@@ -261,7 +261,7 @@ async function submitPassword() {
 
 .layout-aside :deep(.el-menu-item.is-active) {
   background: var(--cp-sidebar-active);
-  color: #fff;
+  color: var(--np-on-brand);
 }
 
 .layout-aside :deep(.el-menu-item .el-icon) {
@@ -339,7 +339,7 @@ async function submitPassword() {
   height: 32px;
   border-radius: 50%;
   background: var(--cp-primary);
-  color: #fff;
+  color: var(--np-on-brand);
   display: flex;
   align-items: center;
   justify-content: center;

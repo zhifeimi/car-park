@@ -1,6 +1,6 @@
 # Trailhead: the parking-booking design system
 
-One visual system for every park that runs this software, in any country: a community lot, a scenic area, or a national park. A deployment sets itself up with **four build-time variables and the server's `TZ`**. It never forks CSS or code.
+One visual system for every park that runs this software, in any country: a community lot, a scenic area, or a national park. A deployment sets itself up with **four build-time variables and the server's `PARK_TIME_ZONE`**. It never forks CSS or code.
 
 - Tokens: [`src/tokens.css`](src/tokens.css) (`--np-*`). This file is the single source of truth.
 - Live preview: [`preview.html`](preview.html). Open it in a browser and switch biome presets.
@@ -91,7 +91,7 @@ VITE_SITE_NAME=武夷山国家公园 VITE_SITE_NAME_EN='Wuyishan National Park' 
 | `VITE_SITE_NAME` | Eyebrow above the H5 titles, the admin login heading, and the browser tab titles |
 | `VITE_SITE_NAME_EN` | Site name shown when the visitor picks English. Falls back to `VITE_SITE_NAME` |
 | `VITE_PARK_THEME` | `forest` \| `canyon` \| `glacier` \| `coast`. Sets `<html data-park>` |
-| `TZ` (backend process) | The park's clock, for example `TZ=Pacific/Auckland`. "Today" for booking checks and availability, audit timestamps and JSON dates all follow it. Unset, it defaults to `Australia/Sydney` — the host zone is never used |
+| `PARK_TIME_ZONE` (backend process) | The park's clock, an IANA zone id, for example `PARK_TIME_ZONE=Pacific/Auckland`. "Today" for booking checks and availability, audit timestamps and JSON dates all follow it. Unset, it defaults to `Asia/Shanghai` — neither the host zone nor the POSIX `TZ` is used. The H5 asks the server for the park's date, so the phone's clock never decides "today" |
 
 The variables never change the API contract, the gate QR payload (`{车牌号,手机号,停车场,日期}`, whose keys stay Chinese because gate scanners parse them), or the mobile `/mobile/` + `/prod-api` layout.
 

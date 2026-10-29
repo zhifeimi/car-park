@@ -29,9 +29,13 @@ export const PLATE_REGEX = /^[\p{L}\p{N}](?:[\p{L}\p{M}\p{N}]|[ \-·](?=[\p{L}\p
 /** E.164 international number, VITE_REGION=intl. The server also accepts CN_MOBILE_REGEX. */
 export const E164_REGEX = /^\+[1-9]\d{6,14}$/
 
-/** Plate as typed → canonical: trimmed, single spaces, upper case. */
+/**
+ * Plate as typed → canonical: NFC, separators (spaces, hyphens, middle dots)
+ * removed, upper case — "ab-123", "AB 123" and "AB·123" are all "AB123".
+ * The server stores and compares this spelling (Plates.canonical); keep in sync.
+ */
 export function normalizePlate(plate: string): string {
-  return plate.trim().replace(/\s+/g, ' ').toUpperCase()
+  return plate.normalize('NFC').replace(/[\s\-·]+/g, '').toUpperCase()
 }
 
 /** Phone as typed ("+44 7700 900123", "+1 (202) 555-0143") → "+447700900123". */
@@ -54,6 +58,7 @@ export const LETTERS_ROW_2: readonly string[] = 'MNPQRSTUVWXYZ'.split('')
 export const DIGITS: readonly string[] = '1234567890'.split('')
 
 export * from './booking-lifecycle-display.ts'
+export * from './i18n.ts'
 export * from './server-messages.ts'
 
 /**

@@ -12,6 +12,7 @@ import org.springframework.data.jpa.domain.Specification;
 import press.mizhifei.parking.common.ServiceException;
 import press.mizhifei.parking.domain.BookingStatus;
 import press.mizhifei.parking.domain.ParkingBooking;
+import press.mizhifei.parking.domain.Plates;
 
 /**
  * 停车预约查询条件 (Booking Query Criteria).
@@ -38,7 +39,7 @@ public record BookingCriteria(
             Sort.Order.asc("carPlate"));
 
     public BookingCriteria {
-        carPlate = blankToNull(carPlate);
+        carPlate = Plates.canonical(blankToNull(carPlate)); // stored spelling, see Plates
         park = blankToNull(park);
         cellPhone = blankToNull(cellPhone);
         bookingDate = blankToNull(bookingDate);

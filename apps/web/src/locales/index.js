@@ -1,9 +1,18 @@
 import { computed, ref } from 'vue'
 import enLocale from 'element-plus/es/locale/lang/en'
 import zhCnLocale from 'element-plus/es/locale/lang/zh-cn'
+import {
+  initialLocale,
+  localeOptions as optionsOf,
+  siteNameFor,
+  storeLocale,
+  translate,
+} from '@car-park/utils'
 import en from './en.js'
 import zhCN from './zh-CN.js'
 
+// Detection, lookup and branding live in @car-park/utils (i18n.ts), shared
+// with the H5; this file only binds them to Vue and Element Plus.
 const STORAGE_KEY = 'carpark_locale'
 const DEFAULT_LOCALE = 'en'
 
@@ -19,35 +28,21 @@ const elLocales = {
 }
 
 /** Dropdown entries, in the order of `messages`. */
-export const localeOptions = Object.keys(messages).map((code) => ({
-  code,
-  label: messages[code].common.languageName,
-}))
+export const localeOptions = optionsOf(messages)
 
-/** The browser's preferred languages → first supported locale (exact tag, then language). */
-function detectLocale() {
-  for (const tag of globalThis.navigator?.languages ?? []) {
-    if (messages[tag]) return tag
-    const sameLanguage = Object.keys(messages).find((code) => code.split('-')[0] === tag.split('-')[0])
-    if (sameLanguage) return sameLanguage
-  }
-  return DEFAULT_LOCALE
-}
+const currentLocale = ref(initialLocale(STORAGE_KEY, Object.keys(messages), DEFAULT_LOCALE))
 
-const stored = localStorage.getItem(STORAGE_KEY)
-const currentLocale = ref(messages[stored] ? stored : detectLocale())
-
-// lang drives screen-reader pronunciation and per-script font fallback
-function applyLang(lang) {
+function applyLocale(lang) {
+  // lang drives screen-reader pronunciation and per-script font fallback
   if (globalThis.document) document.documentElement.lang = lang
 }
-applyLang(currentLocale.value)
+applyLocale(currentLocale.value)
 
 export function setLocale(lang) {
   if (messages[lang]) {
     currentLocale.value = lang
-    localStorage.setItem(STORAGE_KEY, lang)
-    applyLang(lang)
+    storeLocale(STORAGE_KEY, lang)
+    applyLocale(lang)
   }
 }
 
@@ -56,35 +51,7 @@ export function getLocale() {
 }
 
 export function t(path, params) {
-  const lang = currentLocale.value
-  const dict = messages[lang] || messages[DEFAULT_LOCALE]
-  const keys = path.split('.')
-  let value = dict
-  for (const k of keys) {
-    if (value && typeof value === 'object' && k in value) {
-      value = value[k]
-    } else {
-      // Fallback to English
-      let fallbackValue = messages[DEFAULT_LOCALE]
-      for (const fk of keys) {
-        if (fallbackValue && typeof fallbackValue === 'object' && fk in fallbackValue) {
-          fallbackValue = fallbackValue[fk]
-        } else {
-          return path
-        }
-      }
-      value = fallbackValue
-      break
-    }
-  }
-
-  if (typeof value === 'string' && params && typeof params === 'object') {
-    return value.replace(/\{(\w+)\}/g, (_, key) => {
-      return params[key] !== undefined ? String(params[key]) : `{${key}}`
-    })
-  }
-
-  return value ?? path
+  return translate(messages, DEFAULT_LOCALE, currentLocale.value, path, params)
 }
 
 export const elLocale = computed(() => elLocales[currentLocale.value])
@@ -93,9 +60,7 @@ export const elLocale = computed(() => elLocales[currentLocale.value])
 // import.meta.env is absent under plain `deno test`.
 const env = import.meta.env ?? {}
 
-export const siteName = computed(() =>
-  (currentLocale.value === 'en' && env.VITE_SITE_NAME_EN) || env.VITE_SITE_NAME || '',
-)
+export const siteName = computed(() => siteNameFor(currentLocale.value, env))
 
 export function useI18n() {
   return {

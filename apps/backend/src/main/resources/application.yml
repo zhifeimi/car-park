@@ -34,12 +34,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
   jackson:
-    # The park's clock. Set TZ (e.g. TZ=Europe/Oslo) on the backend process. This one
-    # property is the zone of the parkClock bean (JpaAuditingConfig) — "today" for
-    # booking checks and availability, and audit timestamps — and of Jackson. The
-    # host's default zone is never consulted, so an unset TZ in a UTC container
-    # still means this default, not UTC.
-    time-zone: ${TZ:Australia/Sydney}
+    # JSON dates follow the park's clock (app.park.time-zone below).
+    time-zone: ${app.park.time-zone}
     # Jackson 3 (Boot 4) moved the date/time feature flags from
     # SerializationFeature to DateTimeFeature — this is what used to be
     # spring.jackson.serialization.write-dates-as-timestamps.
@@ -64,6 +60,14 @@ springdoc:
     enabled: false
 
 app:
+  park:
+    # The park's clock. Set PARK_TIME_ZONE (an IANA id, e.g. Europe/Oslo) on the backend
+    # process. It is the zone of the parkClock bean (JpaAuditingConfig) — "today" for
+    # booking checks and availability, and audit timestamps — and of Jackson. Neither the
+    # host's default zone nor the POSIX TZ variable is consulted, so an unset value in a
+    # UTC container still means this default. The default is the deployed parks' zone
+    # (Guangzhou) so a redeploy with the existing env keeps its day boundary.
+    time-zone: ${PARK_TIME_ZONE:Asia/Shanghai}
   jwt:
     secret: ${JWT_SECRET}        # HS256 key, >= 32 bytes, from env only
     expiration-minutes: 720      # stateless: no Redis refresh, so longer than legacy 30min (documented trade-off)

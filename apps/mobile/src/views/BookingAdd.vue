@@ -134,7 +134,10 @@ const intl = import.meta.env.VITE_REGION === 'intl'
 
 const MAX_PLATE_LENGTH = 8 // new-energy plates are 8 chars; ordinary plates 7
 
-const today = formatDateTime(new Date())
+// "Today" is the park's date, which the server decides (its park clock) and returns
+// with the park list. The phone's clock is only a placeholder until that arrives:
+// a phone in another zone would otherwise pre-fill or allow a day the server rejects.
+const today = ref(formatDateTime(new Date()))
 
 const parkList = ref([])
 const selectedPark = reactive({ lotNum: null, leftLotNum: null })
@@ -142,13 +145,16 @@ const form = reactive({
   carPlate: '',
   cellPhone: '',
   park: '',
-  bookingDate: today,
+  bookingDate: today.value,
   notice: false,
 })
 const showKeyboard = ref(false)
 const showCalendar = ref(false)
 const submitting = ref(false)
-const minDate = new Date()
+const minDate = computed(() => {
+  const [y, m, d] = today.value.split('-').map(Number)
+  return new Date(y, m - 1, d)
+})
 
 const noticeLines = computed(() => t('booking.noticeLines'))
 
@@ -164,7 +170,12 @@ const displayLeftLotNum = computed(() =>
 
 onMounted(async () => {
   try {
-    const rows = await listParks()
+    const { rows, today: parkToday } = await listParks()
+    if (parkToday) {
+      // still on the placeholder default → move it to the park's day
+      if (form.bookingDate === today.value) form.bookingDate = parkToday
+      today.value = parkToday
+    }
     parkList.value = rows
     selectedPark.lotNum = rows.reduce((sum, p) => sum + Number(p.lotNum || 0), 0)
     selectedPark.leftLotNum = rows.reduce((sum, p) => sum + Number(p.leftLotNum || 0), 0)
@@ -244,9 +255,9 @@ function validate() {
 }
 
 async function submit() {
+  // what the server stores is also the /last lookup key, so normalize first
+  form.carPlate = normalizePlate(form.carPlate)
   if (intl) {
-    // what the server stores is also the /last lookup key, so normalize first
-    form.carPlate = normalizePlate(form.carPlate)
     form.cellPhone = normalizePhone(form.cellPhone)
   }
   const error = validate()
@@ -260,16 +271,17 @@ async function submit() {
   }
   submitting.value = true
   try {
-    // The success page loads the booking by phone + plate via /parking/booking/last,
-    // so both must be stored before navigating.
-    localStorage.setItem(PHONE_STORAGE_KEY, form.cellPhone)
-    localStorage.setItem(PLATE_STORAGE_KEY, form.carPlate)
     await addBooking({
       carPlate: form.carPlate,
       cellPhone: form.cellPhone,
       park: form.park,
       bookingDate: form.bookingDate,
     })
+    // The success page loads the booking by phone + plate via /parking/booking/last.
+    // Store the key only once the booking exists: a rejected attempt must not replace
+    // the key of the visitor's real booking (they would lose its QR).
+    localStorage.setItem(PHONE_STORAGE_KEY, form.cellPhone)
+    localStorage.setItem(PLATE_STORAGE_KEY, form.carPlate)
     showSuccessToast(t('booking.bookingSuccess'))
     setTimeout(() => router.push('/success'), 600)
   } catch (err) {

@@ -1,7 +1,8 @@
+import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { pinia } from '@/stores/pinia'
 import { useUserStore } from '@/stores/user'
-import { t } from '@/locales'
+import { getLocale, siteName, t } from '@/locales'
 import Layout from '@/layout/Layout.vue'
 import Login from '@/views/login/index.vue'
 import Dashboard from '@/views/dashboard/index.vue'
@@ -65,10 +66,15 @@ router.beforeEach((to) => {
   }
 })
 
-router.afterEach((to) => {
-  if (to.meta?.title) {
-    document.title = `${t(to.meta.title)} - ${import.meta.env.VITE_SITE_NAME || t('nav.systemTitle')}`
+// Locale-aware (VITE_SITE_NAME_EN for English) and refreshed on a language
+// switch, not only on the next navigation.
+function setTitle(route) {
+  if (route.meta?.title) {
+    document.title = `${t(route.meta.title)} - ${siteName.value || t('nav.systemTitle')}`
   }
-})
+}
+
+router.afterEach(setTitle)
+watch(getLocale, () => setTitle(router.currentRoute.value))
 
 export default router
