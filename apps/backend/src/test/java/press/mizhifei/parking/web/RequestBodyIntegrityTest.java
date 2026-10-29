@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,7 +31,8 @@ import press.mizhifei.parking.web.dto.ParkingDtos.BookingUpdateRequest;
  * markup-bearing payloads and asserts, at the {@link BookingService} interface, that the values
  * reaching binding are byte-identical.
  *
- * <p>Runs in the default suite (no {@code @Tag("db")}): the service is spied and stubbed, so no
+ * <p>Runs in the default suite (no {@code @Tag("db")}): the service is a plain mock — not a spy,
+ * whose {@code @Transactional} proxy would open a JDBC connection even for stubbed calls — so no
  * SQL executes — yet the full application context (and every registered servlet filter) is live,
  * which a {@code @WebMvcTest} slice would not load. A future "helpful" sanitizer added below the
  * test seam turns this red.
@@ -47,15 +48,13 @@ class RequestBodyIntegrityTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoSpyBean
+    @MockitoBean
     private BookingService bookingService;
 
     @Test
     @DisplayName("POST /parking/booking: markup in the body binds verbatim — no pre-bind rewriting")
     void createBody_bindsWithoutMutation() throws Exception {
         AtomicReference<BookingCommand> captured = new AtomicReference<>();
-        Mockito.doReturn(new BookingConfirmation(1L, "粤A12345", PARK_WITH_MARKUP, null, "13800138000"))
-                .when(bookingService).intake(any());
         Mockito.doAnswer(invocation -> {
             captured.set(invocation.getArgument(0));
             return new BookingConfirmation(1L, "粤A12345", PARK_WITH_MARKUP, null, "13800138000");
@@ -93,7 +92,6 @@ class RequestBodyIntegrityTest {
     @DisplayName("PUT /parking/booking: cancel payload binds verbatim — no pre-bind rewriting")
     void cancelBody_bindsWithoutMutation() throws Exception {
         AtomicReference<BookingUpdateRequest> captured = new AtomicReference<>();
-        Mockito.doNothing().when(bookingService).update(any());
         Mockito.doAnswer(invocation -> {
             captured.set(invocation.getArgument(0));
             return null;

@@ -1,13 +1,102 @@
+/* Public H5 theme: Vant mapped onto the shared Trailhead tokens
+   (packages/ui/src/tokens.css). Sized for one-handed use outdoors:
+   15px body, 48px tap targets. */
+:root {
+  --van-primary-color: var(--np-brand);
+  --van-success-color: var(--np-success);
+  --van-danger-color: var(--np-danger);
+  --van-warning-color: var(--np-warning);
+  --van-text-color: var(--np-ink);
+  --van-text-color-2: var(--np-ink-2);
+  --van-text-color-3: var(--np-ink-3);
+  --van-background: var(--np-paper);
+  --van-background-2: var(--np-surface);
+  --van-border-color: var(--np-line);
+  --van-active-color: var(--np-sunken);
+  --van-base-font: var(--np-font);
+  --van-cell-font-size: var(--np-text-md);
+  --van-cell-vertical-padding: 13px;
+  --van-field-label-color: var(--np-ink-2);
+  --van-checkbox-label-color: var(--np-ink);
+  --van-radio-label-color: var(--np-ink);
+  --van-button-radius: var(--np-radius-md);
+  /* Vant's defaults are sized for Chinese; English and most other languages
+     need a wider label column and toast. */
+  --van-field-label-width: 7.5em;
+  --van-toast-default-width: 160px;
+}
+
+/* Vant breaks toast text at any character (fine for CJK, splits Latin words). */
+.van-toast {
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
 html,
 body {
   margin: 0;
   padding: 0;
-  background: #f7f8fa;
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
-    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+  background: var(--np-paper);
+  color: var(--np-ink);
+  font-family: var(--np-font);
   -webkit-font-smoothing: antialiased;
 }
 
 #app {
   min-height: 100vh;
+}
+
+/* Signboard: the dark routed-wood band every park visitor already reads. */
+.signboard {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--np-space-3);
+  padding: calc(var(--np-space-4) + env(safe-area-inset-top)) var(--np-space-4) var(--np-space-5);
+  background: var(--np-sign);
+  color: var(--np-on-sign);
+}
+
+.signboard-eyebrow {
+  margin: 0 0 var(--np-space-1);
+  font-size: var(--np-text-sm);
+  letter-spacing: 0.08em;
+  color: var(--np-on-sign-muted);
+}
+
+.signboard-title {
+  margin: 0;
+  font-size: var(--np-text-xl);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.lang-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(243, 238, 223, 0.12);
+}
+
+.lang-btn {
+  min-width: 44px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font: 600 var(--np-text-xs) / 1 var(--np-font);
+  color: var(--np-on-sign-muted);
+  cursor: pointer;
+}
+
+.lang-btn.active {
+  background: var(--np-on-sign);
+  color: var(--np-sign);
+}
+
+.lang-btn:focus-visible {
+  outline: 2px solid var(--np-on-sign);
+  outline-offset: 2px;
 }

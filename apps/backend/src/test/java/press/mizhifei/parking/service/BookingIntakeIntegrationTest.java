@@ -3,6 +3,7 @@ package press.mizhifei.parking.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,8 +44,12 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     private static final String PARK_NAME = "黄麻停车场";
     private static final String SECOND_PARK = "岭头停车场";
     private static final String CELL_PHONE = "13800138000";
-    private static final LocalDate TODAY = LocalDate.now();
-    private static final LocalDate TOMORROW = TODAY.plusDays(1);
+    @Autowired
+    private Clock parkClock;
+
+    /** The park's day — the service's clock, not the test JVM's default zone. */
+    private LocalDate today;
+    private LocalDate tomorrow;
 
     @Autowired
     private BookingService bookingService;
@@ -51,10 +57,16 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     @Autowired
     private ParkService parkService;
 
+    @BeforeEach
+    void parkDay() {
+        today = LocalDate.now(parkClock);
+        tomorrow = today.plusDays(1);
+    }
+
     // ─── helpers ────────────────────────────────────────────────────────────
 
     private void createPark(String name, long lotNum) {
-        createPark(name, lotNum, TODAY, TODAY.plusMonths(3));
+        createPark(name, lotNum, today, today.plusMonths(3));
     }
 
     private void createPark(String name, long lotNum, LocalDate begin, LocalDate end) {
@@ -126,12 +138,12 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     void intake_validCommand_createsActiveBooking() {
         createPark(PARK_NAME, 2L);
 
-        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
+        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
 
         assertThat(confirmation.id()).isNotNull();
         assertThat(confirmation.carPlate()).isEqualTo(CAR_PLATE);
         assertThat(confirmation.park()).isEqualTo(PARK_NAME);
-        assertThat(confirmation.bookingDate()).isEqualTo(TOMORROW);
+        assertThat(confirmation.bookingDate()).isEqualTo(tomorrow);
         assertThat(confirmation.cellPhone()).isEqualTo(CELL_PHONE);
         assertThat(activeBookingCount()).isEqualTo(1);
     }
@@ -140,7 +152,7 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     void intake_pastDate_rejected() {
         createPark(PARK_NAME, 2L);
 
-        assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TODAY.minusDays(1))))
+        assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, PARK_NAME, today.minusDays(1))))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("预约日期不能早于今天");
         assertThat(activeBookingCount()).isZero();
@@ -149,17 +161,34 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     @Test
     void intake_duplicatePlateSameDate_rejectedSequentially() {
         createPark(PARK_NAME, 2L);
-        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
+        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
 
-        assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW)))
+        assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow)))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("该车牌在所选日期已有生效的预约记录");
         assertThat(activeBookingCount()).isEqualTo(1);
     }
 
     @Test
+    @DisplayName("one vehicle written with different separators is still one vehicle")
+    void intake_samePlateDifferentSeparators_rejected() {
+        createPark(PARK_NAME, 5L);
+        BookingConfirmation first = bookingService.intake(cmd("ab-123", PARK_NAME, tomorrow));
+        assertThat(first.carPlate()).isEqualTo("AB123");
+
+        for (String spelling : new String[] {"AB 123", "AB123", "AB·123"}) {
+            assertThatThrownBy(() -> bookingService.intake(cmd(spelling, PARK_NAME, tomorrow)))
+                    .as(spelling)
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessage("该车牌在所选日期已有生效的预约记录");
+        }
+        assertThat(activeBookingCount()).isEqualTo(1);
+        assertThat(bookingService.lastBooking(CELL_PHONE, "AB 123").getId()).isEqualTo(first.id());
+    }
+
+    @Test
     void intake_unknownPark_rejected() {
-        assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, "不存在的停车场", TOMORROW)))
+        assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, "不存在的停车场", tomorrow)))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("停车场不存在");
         assertThat(activeBookingCount()).isZero();
@@ -167,18 +196,18 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
 
     @Test
     void intake_dateBeforeOpenWindow_rejected() {
-        createPark(PARK_NAME, 2L, TOMORROW.plusDays(5), TOMORROW.plusMonths(2));
+        createPark(PARK_NAME, 2L, tomorrow.plusDays(5), tomorrow.plusMonths(2));
 
-        assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW)))
+        assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow)))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("所选日期不在停车场开放预约范围内");
     }
 
     @Test
     void intake_dateAfterOpenWindow_rejected() {
-        createPark(PARK_NAME, 2L, TODAY.minusDays(10), TODAY);
+        createPark(PARK_NAME, 2L, today.minusDays(10), today);
 
-        assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW)))
+        assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow)))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("所选日期不在停车场开放预约范围内");
     }
@@ -186,9 +215,9 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     @Test
     void intake_capacityFull_rejectedSequentially() {
         createPark(PARK_NAME, 1L);
-        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
+        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
 
-        assertThatThrownBy(() -> bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, TOMORROW)))
+        assertThatThrownBy(() -> bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, tomorrow)))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("该停车场当日预约名额已满");
         assertThat(activeBookingCount()).isEqualTo(1);
@@ -203,7 +232,7 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
 
         List<Future<Boolean>> futures = race(2,
                 () -> {
-                    bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
+                    bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
                     return true;
                 },
                 ServiceException.class);
@@ -221,7 +250,7 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
 
         List<Future<Boolean>> futures = race(2,
                 () -> {
-                    bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
+                    bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
                     return true;
                 },
                 ServiceException.class);
@@ -229,7 +258,7 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
         assertThat(successes(futures)).as("at most one of the two racers may win").isLessThanOrEqualTo(1);
         Integer active = jdbcTemplate().queryForObject(
                 "SELECT COUNT(*) FROM cp_parking_booking WHERE car_plate = ? AND booking_date = ? AND status = 0",
-                Integer.class, CAR_PLATE, TOMORROW);
+                Integer.class, CAR_PLATE, tomorrow);
         assertThat(active).as("at most one ACTIVE booking per plate per date").isLessThanOrEqualTo(1);
     }
 
@@ -241,18 +270,18 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
 
         List<Future<Boolean>> futures = race(List.of(
                 (Callable<Boolean>) () -> {
-                    bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
+                    bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
                     return true;
                 },
                 () -> {
-                    bookingService.intake(cmd(CAR_PLATE, SECOND_PARK, TOMORROW));
+                    bookingService.intake(cmd(CAR_PLATE, SECOND_PARK, tomorrow));
                     return true;
                 }), ServiceException.class);
 
         assertThat(successes(futures)).as("at most one of the two racers may win").isLessThanOrEqualTo(1);
         Integer active = jdbcTemplate().queryForObject(
                 "SELECT COUNT(*) FROM cp_parking_booking WHERE car_plate = ? AND booking_date = ? AND status = 0",
-                Integer.class, CAR_PLATE, TOMORROW);
+                Integer.class, CAR_PLATE, tomorrow);
         assertThat(active).as("at most one ACTIVE booking per plate per date across all parks").isLessThanOrEqualTo(1);
     }
 
@@ -261,22 +290,37 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     @Test
     void cancel_activeBooking_transitionsReleasesSlotAndPlate() {
         createPark(PARK_NAME, 2L);
-        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
+        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
 
-        bookingService.cancel(confirmation.id());
+        bookingService.cancel(confirmation.id(), CELL_PHONE);
 
         Integer cancelled = jdbcTemplate().queryForObject(
                 "SELECT status FROM cp_parking_booking WHERE id = ?", Integer.class, confirmation.id());
         assertThat(cancelled).isEqualTo(BookingStatus.CANCELLED.getCode());
         assertThat(activeBookingCount()).isZero();
         // the released plate can book again
-        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
+        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
+        assertThat(activeBookingCount()).isEqualTo(1);
+    }
+
+    @Test
+    void cancel_wrongOrMissingPhone_rejectedLikeMissingId() {
+        createPark(PARK_NAME, 2L);
+        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
+
+        assertThatThrownBy(() -> bookingService.cancel(confirmation.id(), "13900139000"))
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("预约记录不存在");
+        assertThatThrownBy(() -> bookingService.update(new BookingUpdateRequest(
+                confirmation.id(), null, null, null, null, null, BookingStatus.CANCELLED)))
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("预约记录不存在");
         assertThat(activeBookingCount()).isEqualTo(1);
     }
 
     @Test
     void cancel_missingId_rejected() {
-        assertThatThrownBy(() -> bookingService.cancel(99_999L))
+        assertThatThrownBy(() -> bookingService.cancel(99_999L, CELL_PHONE))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("预约记录不存在");
     }
@@ -284,10 +328,10 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     @Test
     void cancel_alreadyCancelled_rejected() {
         createPark(PARK_NAME, 2L);
-        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
-        bookingService.cancel(confirmation.id());
+        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
+        bookingService.cancel(confirmation.id(), CELL_PHONE);
 
-        assertThatThrownBy(() -> bookingService.cancel(confirmation.id()))
+        assertThatThrownBy(() -> bookingService.cancel(confirmation.id(), CELL_PHONE))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("该预约记录已取消或已失效");
     }
@@ -298,11 +342,11 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
         jdbcTemplate().update(
                 "INSERT INTO cp_parking_booking (car_plate, park, booking_date, cell_phone, status, create_by, create_time)"
                         + " VALUES (?, ?, ?, ?, ?, 'system', NOW())",
-                CAR_PLATE, PARK_NAME, TODAY.minusDays(1), CELL_PHONE, BookingStatus.ACTIVE.getCode());
+                CAR_PLATE, PARK_NAME, today.minusDays(1), CELL_PHONE, BookingStatus.ACTIVE.getCode());
         Long id = jdbcTemplate().queryForObject(
                 "SELECT id FROM cp_parking_booking WHERE car_plate = ?", Long.class, CAR_PLATE);
 
-        assertThatThrownBy(() -> bookingService.cancel(id))
+        assertThatThrownBy(() -> bookingService.cancel(id, CELL_PHONE))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("无法取消已过期的历史预约");
     }
@@ -310,10 +354,10 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     @Test
     void update_cancelRequest_cancels() {
         createPark(PARK_NAME, 2L);
-        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
+        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
 
         bookingService.update(new BookingUpdateRequest(
-                confirmation.id(), null, null, null, null, null, BookingStatus.CANCELLED));
+                confirmation.id(), null, null, null, CELL_PHONE, null, BookingStatus.CANCELLED));
 
         assertThat(activeBookingCount()).isZero();
     }
@@ -321,7 +365,7 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     @Test
     void update_arbitraryMutation_rejected() {
         createPark(PARK_NAME, 2L);
-        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
+        BookingConfirmation confirmation = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
 
         assertThatThrownBy(() -> bookingService.update(new BookingUpdateRequest(
                 confirmation.id(), OTHER_PLATE, null, null, null, null, BookingStatus.ACTIVE)))
@@ -333,24 +377,28 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     // ─── queries & admin operations ─────────────────────────────────────────
 
     @Test
-    void lastByCellPhone_returnsMostRecentBooking() throws InterruptedException {
+    void lastBooking_returnsMostRecentForPhoneAndPlate() throws InterruptedException {
         createPark(PARK_NAME, 5L);
-        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TODAY));
+        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, today));
         // create_time has second precision — separate the rows so ordering is deterministic
         Thread.sleep(1100);
-        bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, TOMORROW));
+        bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, tomorrow));
 
-        var last = bookingService.lastByCellPhone(CELL_PHONE);
+        var last = bookingService.lastBooking(CELL_PHONE, OTHER_PLATE);
 
         assertThat(last).isNotNull();
-        assertThat(last.getCarPlate()).isEqualTo(OTHER_PLATE);
+        assertThat(last.getBookingDate()).isEqualTo(tomorrow);
+        assertThat(bookingService.lastBooking(CELL_PHONE, CAR_PLATE).getBookingDate()).isEqualTo(today);
+        // phone alone is not enough — the plate must match too
+        assertThat(bookingService.lastBooking(CELL_PHONE, "粤C00000")).isNull();
+        assertThat(bookingService.lastBooking("13900139000", OTHER_PLATE)).isNull();
     }
 
     @Test
     void deleteByIds_removesBatch() {
         createPark(PARK_NAME, 5L);
-        long first = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TODAY)).id();
-        long second = bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, TODAY)).id();
+        long first = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, today)).id();
+        long second = bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, today)).id();
 
         bookingService.deleteByIds(first + ", " + second);
 
@@ -362,8 +410,8 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     void list_withCriteria_filtersAndPages() {
         createPark(PARK_NAME, 5L);
         createPark(SECOND_PARK, 5L);
-        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TODAY));
-        bookingService.intake(cmd(OTHER_PLATE, SECOND_PARK, TODAY));
+        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, today));
+        bookingService.intake(cmd(OTHER_PLATE, SECOND_PARK, today));
 
         // Filter by park
         TableData parkFilter = bookingService.list(BookingCriteria.unpaged(null, PARK_NAME, null, null, null));
@@ -384,8 +432,8 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     @DisplayName("listAll with BookingCriteria returns unpaged rows")
     void listAll_withCriteria_returnsMatching() {
         createPark(PARK_NAME, 5L);
-        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TODAY));
-        bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, TODAY));
+        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, today));
+        bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, today));
 
         var all = bookingService.listAll(BookingCriteria.all());
         assertThat(all).hasSize(2);
@@ -400,22 +448,22 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     @DisplayName("leftLotNum reflects intake and frees on cancel")
     void leftLotNum_followsIntakeAndCancellation() {
         createPark(PARK_NAME, 3L);
-        BookingConfirmation first = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TOMORROW));
-        bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, TOMORROW));
+        BookingConfirmation first = bookingService.intake(cmd(CAR_PLATE, PARK_NAME, tomorrow));
+        bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, tomorrow));
 
-        assertThat(parkService.leftLotNum(PARK_NAME, TOMORROW.toString())).isEqualTo(1);
+        assertThat(parkService.leftLotNum(PARK_NAME, tomorrow.toString())).isEqualTo(1);
 
-        bookingService.cancel(first.id());
+        bookingService.cancel(first.id(), CELL_PHONE);
 
-        assertThat(parkService.leftLotNum(PARK_NAME, TOMORROW.toString())).isEqualTo(2);
+        assertThat(parkService.leftLotNum(PARK_NAME, tomorrow.toString())).isEqualTo(2);
     }
 
     @Test
     @DisplayName("park list computes today's leftLotNum from real intake rows")
     void parkList_computesTodaysLeftLotNum() {
         createPark(PARK_NAME, 5L);
-        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, TODAY));
-        bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, TODAY));
+        bookingService.intake(cmd(CAR_PLATE, PARK_NAME, today));
+        bookingService.intake(cmd(OTHER_PLATE, PARK_NAME, today));
 
         TableData data = parkService.list(new ParkCriteria(null, null, null, null, null, null, null, null));
 

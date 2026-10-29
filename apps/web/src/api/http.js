@@ -17,10 +17,10 @@
  */
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { envelopeOf } from '@car-park/utils'
+import { envelopeOf, localizeServerMessage } from '@car-park/utils'
 import { pinia } from '../stores/pinia.js'
 import { useUserStore } from '../stores/user.js'
-import { t } from '../locales/index.js'
+import { getLocale, t } from '../locales/index.js'
 
 export const ui = {
   /** Business-failure toast. */
@@ -69,12 +69,12 @@ function isBinary(res) {
 
 /** Extract the server's human message from any failure shape. */
 function serverMsg(error) {
-  return error?.response?.data?.msg ?? error?.message
+  return localizeServerMessage(error?.response?.data?.msg, getLocale()) ?? error?.message
 }
 
 function unwrapOrThrow(res) {
   const { code, msg: envelopeMsg } = envelopeOf(res.data)
-  const msg = envelopeMsg || t('common.unknownError')
+  const msg = localizeServerMessage(envelopeMsg, getLocale()) || t('common.unknownError')
   if (code === 401) {
     handleUnauthorized()
     throw new Error(msg)

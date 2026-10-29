@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard">
     <div class="stat-row">
-      <div class="stat-card" style="--accent: var(--cp-primary); --accent-bg: var(--cp-primary-lighter)">
+      <div class="stat-card">
         <div class="stat-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         </div>
@@ -10,7 +10,7 @@
           <span class="stat-label">{{ t('dashboard.todayBooking') }}</span>
         </div>
       </div>
-      <div class="stat-card" style="--accent: var(--cp-success); --accent-bg: var(--cp-success-light)">
+      <div class="stat-card">
         <div class="stat-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
@@ -19,7 +19,7 @@
           <span class="stat-label">{{ t('dashboard.weekBooking') }}</span>
         </div>
       </div>
-      <div class="stat-card" style="--accent: var(--cp-warning); --accent-bg: var(--cp-warning-light)">
+      <div class="stat-card">
         <div class="stat-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
         </div>
@@ -28,7 +28,7 @@
           <span class="stat-label">{{ t('dashboard.monthBooking') }}</span>
         </div>
       </div>
-      <div class="stat-card" style="--accent: var(--cp-danger); --accent-bg: var(--cp-danger-light)">
+      <div class="stat-card">
         <div class="stat-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
@@ -182,15 +182,15 @@ onMounted(() => {
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--np-shadow-raised);
 }
 
 .stat-icon {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: var(--accent-bg);
-  color: var(--accent);
+  background: var(--np-brand-soft);
+  color: var(--np-brand);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -208,6 +208,7 @@ onMounted(() => {
 }
 
 .stat-value {
+  font-variant-numeric: tabular-nums;
   font-size: 28px;
   font-weight: 800;
   line-height: 1.2;
@@ -267,7 +268,7 @@ onMounted(() => {
 
 .park-item {
   padding: 12px 8px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--cp-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -296,6 +297,7 @@ onMounted(() => {
 }
 
 .slot-available {
+  font-variant-numeric: tabular-nums;
   font-size: 22px;
   font-weight: 800;
   color: var(--cp-success);
@@ -336,12 +338,12 @@ onMounted(() => {
   align-items: center;
   gap: 16px;
   padding: 12px 20px;
-  border-bottom: 1px solid #f8fafc;
+  border-bottom: 1px solid var(--cp-border);
   transition: background 0.15s;
 }
 
 .booking-row:hover {
-  background: #f8fafc;
+  background: var(--np-paper);
 }
 
 .booking-row:last-child {

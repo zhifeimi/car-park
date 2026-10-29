@@ -1,6 +1,8 @@
+import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { pinia } from '@/stores/pinia'
 import { useUserStore } from '@/stores/user'
+import { getLocale, siteName, t } from '@/locales'
 import Layout from '@/layout/Layout.vue'
 import Login from '@/views/login/index.vue'
 import Dashboard from '@/views/dashboard/index.vue'
@@ -14,7 +16,7 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login,
-    meta: { title: '登录' },
+    meta: { title: 'login.pageTitle' },
   },
   {
     path: '/',
@@ -25,25 +27,25 @@ const routes = [
         path: 'dashboard',
         name: 'Dashboard',
         component: Dashboard,
-        meta: { title: '首页' },
+        meta: { title: 'nav.dashboard' },
       },
       {
         path: 'park',
         name: 'Park',
         component: Park,
-        meta: { title: '停车场管理' },
+        meta: { title: 'nav.park' },
       },
       {
         path: 'booking',
         name: 'Booking',
         component: Booking,
-        meta: { title: '预约记录' },
+        meta: { title: 'nav.booking' },
       },
       {
         path: 'user',
         name: 'User',
         component: User,
-        meta: { title: '管理员' },
+        meta: { title: 'nav.user' },
       },
     ],
   },
@@ -64,10 +66,15 @@ router.beforeEach((to) => {
   }
 })
 
-router.afterEach((to) => {
-  if (to.meta?.title) {
-    document.title = `${to.meta.title} - 停车场预约管理系统`
+// Locale-aware (VITE_SITE_NAME_EN for English) and refreshed on a language
+// switch, not only on the next navigation.
+function setTitle(route) {
+  if (route.meta?.title) {
+    document.title = `${t(route.meta.title)} - ${siteName.value || t('nav.systemTitle')}`
   }
-})
+}
+
+router.afterEach(setTitle)
+watch(getLocale, () => setTitle(router.currentRoute.value))
 
 export default router

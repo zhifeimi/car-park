@@ -1,7 +1,9 @@
 package press.mizhifei.parking.service;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -9,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import press.mizhifei.parking.common.ServiceException;
 import press.mizhifei.parking.domain.BookingStatus;
 import press.mizhifei.parking.domain.Park;
+import press.mizhifei.parking.domain.Plates;
 import press.mizhifei.parking.domain.ParkingBooking;
 import press.mizhifei.parking.repository.BookingRepository;
 import press.mizhifei.parking.repository.ParkRepository;
@@ -28,10 +31,12 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final ParkRepository parkRepository;
+    private final Clock clock;
 
-    public BookingService(BookingRepository bookingRepository, ParkRepository parkRepository) {
+    public BookingService(BookingRepository bookingRepository, ParkRepository parkRepository, Clock clock) {
         this.bookingRepository = bookingRepository;
         this.parkRepository = parkRepository;
+        this.clock = clock;
     }
 
     /**
@@ -50,14 +55,16 @@ public class BookingService {
      */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public BookingConfirmation intake(BookingCommand command) {
-        LocalDate today = LocalDate.now();
+        // One vehicle, one spelling: "AB-123" and "AB 123" must collide in the checks below.
+        String carPlate = Plates.canonical(command.carPlate());
+        LocalDate today = LocalDate.now(clock);
         if (command.bookingDate().isBefore(today)) {
             throw new ServiceException("预约日期不能早于今天");
         }
 
         // Fail fast (advisory): the authoritative exclusivity check happens again
         // under the park lock below, where it sees concurrently committed bookings.
-        if (bookingRepository.existsByCarPlateAndBookingDateAndStatus(command.carPlate(), command.bookingDate(), BookingStatus.ACTIVE)) {
+        if (bookingRepository.existsByCarPlateAndBookingDateAndStatus(carPlate, command.bookingDate(), BookingStatus.ACTIVE)) {
             throw new ServiceException("该车牌在所选日期已有生效的预约记录");
         }
 
@@ -68,7 +75,7 @@ public class BookingService {
 
         // Vehicle exclusivity, authoritative: re-checked under the lock with a fresh
         // committed view (see isolation note above).
-        if (bookingRepository.existsByCarPlateAndBookingDateAndStatus(command.carPlate(), command.bookingDate(), BookingStatus.ACTIVE)) {
+        if (bookingRepository.existsByCarPlateAndBookingDateAndStatus(carPlate, command.bookingDate(), BookingStatus.ACTIVE)) {
             throw new ServiceException("该车牌在所选日期已有生效的预约记录");
         }
 
@@ -88,7 +95,7 @@ public class BookingService {
 
         // Create active booking (status = ACTIVE) and persist
         ParkingBooking booking = new ParkingBooking();
-        booking.setCarPlate(command.carPlate());
+        booking.setCarPlate(carPlate);
         booking.setPark(command.park());
         booking.setBookingDate(command.bookingDate());
         booking.setCellPhone(command.cellPhone());
@@ -109,29 +116,37 @@ public class BookingService {
      * Cancel an active booking and transition state from ACTIVE to CANCELLED.
      * Enforces that the booking must currently be active and for a non-past date.
      *
+     * <p>The caller must name the booking's phone: ids are sequential, so an id alone would let
+     * anyone cancel everyone's bookings. A wrong phone answers exactly like a missing id, so the
+     * endpoint is no existence oracle.
+     *
      * @param id booking ID
-     * @throws ServiceException if the booking is missing, already cancelled, or for a past date
+     * @param cellPhone the phone the booking was made with
+     * @throws ServiceException if the booking is missing or not that phone's, already cancelled,
+     *                          or for a past date
      */
     @Transactional
-    public void cancel(Long id) {
+    public void cancel(Long id, String cellPhone) {
         if (id == null) {
             throw new ServiceException("预约记录不存在");
         }
         ParkingBooking booking = bookingRepository.findById(id)
+                .filter(b -> cellPhone != null && Objects.equals(b.getCellPhone(), cellPhone))
                 .orElseThrow(() -> new ServiceException("预约记录不存在"));
 
-        booking.cancel(LocalDate.now());
+        booking.cancel(LocalDate.now(clock));
         bookingRepository.save(booking);
     }
 
     /**
      * Handles public partial updates. Anonymous callers are restricted strictly
-     * to cancellation (status: CANCELLED / -1). Arbitrary field mutations are rejected.
+     * to cancellation ({@code status: -1}, proven by the booking's {@code cellPhone}).
+     * Arbitrary field mutations are rejected.
      */
     @Transactional
     public void update(BookingUpdateRequest request) {
         if (request.status() == BookingStatus.CANCELLED) {
-            cancel(request.id());
+            cancel(request.id(), request.cellPhone());
             return;
         }
         throw new ServiceException("不支持修改预约记录内容");
@@ -161,8 +176,14 @@ public class BookingService {
         return bookingRepository.findAll(criteria.toSpecification(), BookingCriteria.LEGACY_ORDER);
     }
 
-    public ParkingBooking lastByCellPhone(String cellPhone) {
-        return bookingRepository.findFirstByCellPhoneOrderByCreateTimeDesc(cellPhone).orElse(null);
+    /**
+     * Latest booking (by create time) for a phone <em>and</em> plate. Both are required: by phone
+     * alone, walking a number range would return every citizen's plate, park and booking id.
+     * The plate is matched in its canonical spelling ({@link Plates}), as intake stores it.
+     */
+    public ParkingBooking lastBooking(String cellPhone, String carPlate) {
+        return bookingRepository.findFirstByCellPhoneAndCarPlateOrderByCreateTimeDesc(cellPhone, Plates.canonical(carPlate))
+                .orElse(null);
     }
 
     @Transactional

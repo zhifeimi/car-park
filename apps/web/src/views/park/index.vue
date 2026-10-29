@@ -236,7 +236,7 @@ onMounted(getList)
 
 .form-tip {
   font-size: 12px;
-  color: #e6a23c;
+  color: var(--cp-warning);
   line-height: 1.5;
   margin-top: 4px;
 }

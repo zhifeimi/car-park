@@ -1,0 +1,533 @@
+<title>Trailhead Design System</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="src/tokens.css">
+<style>
+  /* Layout: a signboard band carries the controls; below it the live screens,
+     then a token reference board. Product specimens keep their own (light) tokens. */
+  :root {
+    --pv-bg: #f7f8f5;
+    --pv-panel: #ffffff;
+    --pv-fg: #1b201c;
+    --pv-muted: #596057;
+    --pv-line: #dde1d9;
+    --pv-accent: var(--np-brand);
+    --pv-code: #eef1ec;
+    --pv-pass: #276b43;
+    --pv-fail: #b42318;
+    --pv-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --pv-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --pv-bg: #101411; --pv-panel: #171c18; --pv-fg: #e5e9e2; --pv-muted: #a3aa9f; --pv-line: #2b322c;
+      --pv-accent: color-mix(in srgb, var(--np-brand), #fff 55%); --pv-code: #1d231e;
+      --pv-pass: #8fd0a6; --pv-fail: #f19b90; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --pv-bg: #101411; --pv-panel: #171c18; --pv-fg: #e5e9e2; --pv-muted: #a3aa9f; --pv-line: #2b322c;
+    --pv-accent: color-mix(in srgb, var(--np-brand), #fff 55%); --pv-code: #1d231e;
+    --pv-pass: #8fd0a6; --pv-fail: #f19b90; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--pv-bg); color: var(--pv-fg); font: 15px/1.6 var(--pv-font); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  code { font-family: var(--pv-mono); font-size: 0.86em; }
+  button, input { font: inherit; }
+  :focus-visible { outline: 2px solid var(--pv-accent); outline-offset: 2px; }
+
+  /* ---------- signboard band ---------- */
+  .band { background: var(--np-sign); color: var(--np-on-sign); transition: background 0.2s; }
+  .band .wrap { padding-block: 40px 32px; display: grid; gap: 20px; }
+  .band-eyebrow { margin: 0; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--np-on-sign-muted); }
+  .band-title { display: flex; align-items: center; gap: 16px; }
+  .plaque { display: grid; place-items: center; width: 56px; height: 56px; flex-shrink: 0; border-radius: 8px; background: var(--np-on-sign); color: var(--np-sign); font-size: 34px; font-weight: 800; }
+  .band h1 { font-size: clamp(40px, 7vw, 64px); line-height: 1; font-weight: 800; letter-spacing: 0.01em; }
+  .lede { margin: 0; max-width: 60ch; font-size: 17px; color: var(--np-on-sign); }
+  .controls { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: flex-end; }
+  .control-label { display: block; margin-bottom: 8px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--np-on-sign-muted); }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
+  .preset { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 8px; border: 1px solid rgba(243, 238, 223, 0.3); border-radius: 999px; background: transparent; color: var(--np-on-sign); cursor: pointer; }
+  .preset[aria-pressed="true"] { background: var(--np-on-sign); color: var(--np-sign); border-color: var(--np-on-sign); font-weight: 700; }
+  .dots { display: inline-flex; }
+  .dots i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--np-on-sign); }
+  .dots i + i { margin-left: -6px; }
+  .name-input { width: min(280px, 100%); min-height: 44px; padding: 0 14px; border: 1px solid rgba(243, 238, 223, 0.3); border-radius: 8px; background: rgba(243, 238, 223, 0.08); color: var(--np-on-sign); }
+  .name-input::placeholder { color: var(--np-on-sign-muted); }
+
+  /* ---------- page sections ---------- */
+  main { display: grid; gap: 56px; padding-block: 48px 72px; }
+  .section-head { display: grid; gap: 6px; margin-bottom: 24px; max-width: 68ch; }
+  .section-head h2 { font-size: 26px; }
+  .section-head p { margin: 0; color: var(--pv-muted); }
+  .kicker { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--pv-accent); font-weight: 700; }
+
+  /* ---------- phone specimens ---------- */
+  .phones { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+  .phone-fig { margin: 0; width: 100%; max-width: 340px; display: grid; gap: 12px; }
+  .phone-fig figcaption { font-size: 14px; color: var(--pv-muted); }
+  .phone { padding: 10px; border: 1px solid var(--pv-line); border-radius: 30px; background: var(--pv-panel); }
+  .screen { border-radius: 22px; overflow: hidden; background: var(--np-paper); color: var(--np-ink); font-family: var(--np-font); font-size: var(--np-text-md); line-height: 1.45; }
+  .s-sign { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 20px 16px 22px; background: var(--np-sign); color: var(--np-on-sign); }
+  .s-eyebrow { margin: 0 0 4px; font-size: var(--np-text-sm); letter-spacing: 0.08em; color: var(--np-on-sign-muted); }
+  .s-title { margin: 0; font-size: var(--np-text-xl); font-weight: 700; }
+  .s-lang { display: inline-flex; flex-shrink: 0; white-space: nowrap; padding: 3px; border-radius: 999px; background: rgba(243, 238, 223, 0.12); font-size: 12px; font-weight: 600; }
+  .s-lang span { padding: 6px 10px; border-radius: 999px; color: var(--np-on-sign-muted); }
+  .s-lang .on { background: var(--np-on-sign); color: var(--np-sign); }
+  .s-body { display: grid; gap: 12px; padding: 12px; }
+  .s-card { background: var(--np-surface); border: 1px solid var(--np-line); border-radius: var(--np-radius-lg); overflow: hidden; }
+  .s-row { display: flex; align-items: center; gap: 12px; min-height: var(--np-tap); padding: 0 14px; border-top: 1px solid var(--np-line); }
+  .s-row:first-child { border-top: 0; }
+  .s-row .lbl { width: 7.5em; flex-shrink: 0; color: var(--np-ink-2); }
+  .s-row .lbl::before { content: "*"; color: var(--np-danger); margin-right: 2px; }
+  .s-row .val { flex: 1; font-variant-numeric: tabular-nums; }
+  .s-row .plate-val { font-weight: 600; letter-spacing: 0.08em; }
+  .s-row .chev { color: var(--np-ink-3); }
+  .s-head { padding: 12px 14px 8px; }
+  .s-head::before { content: "*"; color: var(--np-danger); margin-right: 2px; }
+  .tiles { display: grid; gap: 8px; padding: 0 14px 12px; }
+  .tile { display: flex; align-items: center; gap: 10px; min-height: var(--np-tap); padding: 0 12px; border: 1px solid var(--np-line); border-radius: var(--np-radius-md); }
+  .tile .radio { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--np-line); }
+  .tile.on { border-color: var(--np-brand); background: var(--np-brand-soft); font-weight: 600; }
+  .tile.on .radio { border: 5px solid var(--np-brand); }
+  .avail { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--np-brand-soft); }
+  .avail b { display: block; font-weight: 600; }
+  .avail small { font-size: var(--np-text-sm); color: var(--np-ink-2); }
+  .avail strong { font-size: var(--np-text-2xl); line-height: 1; font-weight: 800; color: var(--np-success); font-variant-numeric: tabular-nums; }
+  .s-btn { display: grid; place-items: center; min-height: 50px; border-radius: var(--np-radius-md); background: var(--np-brand); color: #fff; font-weight: 600; }
+  .s-btn.danger { background: var(--np-surface); color: var(--np-danger); border: 1px solid var(--np-danger); font-weight: 400; }
+  .s-foot { padding: 12px; border-top: 1px solid var(--np-line); }
+
+  .pass-head { display: flex; justify-content: space-between; padding: 12px 14px; background: var(--np-success-soft); color: var(--np-success); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pass-head span:first-child { font-size: var(--np-text-lg); }
+  .pass-main { padding: 20px 14px; text-align: center; }
+  .pass-park { font-size: var(--np-text-xl); font-weight: 700; }
+  .pass-main canvas { display: block; width: 144px; height: 144px; margin: 14px auto 10px; image-rendering: pixelated; }
+  .pass-main p { margin: 0; font-size: var(--np-text-sm); color: var(--np-ink-2); }
+  .tear { position: relative; margin: 0 14px; border-top: 2px dashed var(--np-line); }
+  .tear::before, .tear::after { content: ""; position: absolute; top: -10px; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--np-line); background: var(--np-paper); }
+  .tear::before { left: -24px; } .tear::after { right: -24px; }
+  .stub { display: grid; gap: 10px; padding: 14px; }
+  .stub div { display: flex; justify-content: space-between; align-items: center; }
+  .stub span:first-child { font-size: var(--np-text-sm); color: var(--np-ink-3); }
+  .stub span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .plate { padding: 1px 8px; border: 2px solid var(--np-ink); border-radius: var(--np-radius-sm); font-size: var(--np-text-lg); font-weight: 700; letter-spacing: 0.08em; }
+  .is-cancelled .pass-head { background: var(--np-neutral-soft); color: var(--np-neutral); }
+  .is-cancelled .qr-block, .is-cancelled .cancel-btn { display: none; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; color: var(--pv-fg); cursor: pointer; }
+  .toggle input { width: 18px; height: 18px; accent-color: var(--np-brand); }
+
+  /* ---------- admin specimen ---------- */
+  .admin-scroll { overflow-x: auto; border: 1px solid var(--pv-line); border-radius: 14px; }
+  .admin { display: grid; grid-template-columns: 188px 1fr; min-width: 760px; background: var(--np-paper); color: var(--np-ink); font-family: var(--np-font); font-size: 14px; }
+  .a-side { background: var(--np-sign); padding: 0 10px 16px; }
+  .a-logo { display: flex; align-items: center; gap: 10px; height: 60px; padding: 0 6px; color: var(--np-on-sign); font-weight: 600; }
+  .a-logo .plaque { width: 32px; height: 32px; font-size: 18px; border-radius: 6px; }
+  .a-item { display: block; padding: 10px 12px; margin-bottom: 4px; border-radius: var(--np-radius-md); color: var(--np-on-sign-muted); }
+  .a-item.on { background: var(--np-brand); color: #fff; }
+  .a-main { display: grid; align-content: start; }
+  .a-top { display: flex; justify-content: space-between; align-items: center; height: 60px; padding: 0 20px; background: var(--np-surface); box-shadow: 0 1px 0 var(--np-line); font-weight: 700; font-size: 17px; }
+  .a-top small { font-weight: 400; font-size: 13px; color: var(--np-ink-2); }
+  .a-content { display: grid; gap: 16px; padding: 20px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat { display: flex; gap: 12px; align-items: center; padding: 14px; background: var(--np-surface); border-radius: var(--np-radius-lg); box-shadow: var(--np-shadow); }
+  .stat i { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--np-brand-soft); color: var(--np-brand); font-style: normal; font-weight: 800; }
+  .stat b { display: block; font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat small { color: var(--np-ink-3); font-size: 12px; }
+  .table { background: var(--np-surface); border-radius: var(--np-radius-lg); box-shadow: var(--np-shadow); overflow: hidden; }
+  .tr { display: grid; grid-template-columns: 160px 1fr 110px 100px; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--np-line); font-variant-numeric: tabular-nums; }
+  .tr.th { border-top: 0; background: var(--np-paper); color: var(--np-ink-2); font-weight: 600; font-size: 13px; }
+  .tr .pl { font-weight: 700; letter-spacing: 0.04em; }
+  .tag { justify-self: start; padding: 1px 10px; border-radius: 999px; font-size: 12px; background: var(--np-success-soft); color: var(--np-success); }
+  .tag.off { background: var(--np-neutral-soft); color: var(--np-neutral); }
+
+  /* ---------- token board ---------- */
+  .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 20px; }
+  .panel { min-width: 0; padding: 20px; background: var(--pv-panel); border: 1px solid var(--pv-line); border-radius: 12px; }
+  .panel h3 { font-size: 16px; margin-bottom: 4px; }
+  .panel > p { margin: 0 0 14px; font-size: 14px; color: var(--pv-muted); }
+  .sw { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--pv-line); }
+  .chip { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--pv-line); }
+  .chip.pair { display: grid; place-items: center; font-weight: 800; font-size: 15px; }
+  .sw code { display: block; font-size: 13px; overflow-wrap: anywhere; }
+  .sw .hex { font-family: var(--pv-mono); font-size: 12px; color: var(--pv-muted); }
+  .ratio { font-family: var(--pv-mono); font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .ratio[data-grade="AAA"], .ratio[data-grade="AA"] { color: var(--pv-pass); }
+  .ratio[data-grade="fail"] { color: var(--pv-fail); }
+  .type-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--pv-line); }
+  .type-row code { font-size: 12px; color: var(--pv-muted); }
+  .type-row span { font-family: var(--np-font); overflow-wrap: anywhere; line-height: 1.25; }
+  .space-row { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; padding: 5px 0; }
+  .space-row code { font-size: 12px; color: var(--pv-muted); }
+  .space-row i { display: block; height: 12px; background: var(--pv-accent); border-radius: 2px; }
+  .radii { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; }
+  .radii div { display: grid; gap: 6px; justify-items: center; font-size: 12px; color: var(--pv-muted); }
+  .radii i { width: 56px; height: 40px; border: 2px solid var(--pv-accent); }
+
+  /* ---------- configure ---------- */
+  .config { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; align-items: start; }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--pv-code); border-radius: 10px; font: 13px/1.7 var(--pv-mono); }
+  .rules { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+  .rules li::marker { color: var(--pv-accent); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="band">
+  <div class="wrap">
+    <p class="band-eyebrow">Design system · visitor parking booking</p>
+    <div class="band-title">
+      <span class="plaque" aria-hidden="true">P</span>
+      <h1>Trailhead</h1>
+    </div>
+    <p class="lede">The booking app styled like park signage, for parks in any country. Pick who your visitors are, a biome preset and a park name. Every screen on this page restyles from the same token file the apps ship.</p>
+    <div class="controls">
+      <div>
+        <span class="control-label" id="region-label">Visitors · <code>VITE_REGION</code></span>
+        <div class="presets regions" role="group" aria-labelledby="region-label">
+          <button type="button" class="preset" data-region="cn">China · 中文</button>
+          <button type="button" class="preset" data-region="intl">International · English</button>
+        </div>
+      </div>
+      <div>
+        <span class="control-label" id="preset-label">Biome preset · <code>VITE_PARK_THEME</code></span>
+        <div class="presets biomes" role="group" aria-labelledby="preset-label">
+          <button type="button" class="preset" data-preset="forest"><span class="dots"><i></i><i></i></span>forest</button>
+          <button type="button" class="preset" data-preset="canyon"><span class="dots"><i></i><i></i></span>canyon</button>
+          <button type="button" class="preset" data-preset="glacier"><span class="dots"><i></i><i></i></span>glacier</button>
+          <button type="button" class="preset" data-preset="coast"><span class="dots"><i></i><i></i></span>coast</button>
+        </div>
+      </div>
+      <label>
+        <span class="control-label">Park name · <code>VITE_SITE_NAME</code></span>
+        <input id="site-name" class="name-input" value="武夷山国家公园" placeholder="留空则不显示" autocomplete="off">
+      </label>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <div class="section-head">
+      <span class="kicker">Visitor H5 · Vant</span>
+      <h2>Booked at the trailhead, checked at the gate</h2>
+      <p>The signboard header and park tiles make the form easy to read and tap outdoors, one-handed. The pass is shaped like a paper permit so staff can check plate, park, date and status from a car window. In China mode the plate comes from a province keyboard. In international mode it is typed in any script, and the phone number carries its country code. Example data.</p>
+    </div>
+    <div class="phones">
+      <figure class="phone-fig">
+        <div class="phone"><div class="screen" lang="zh-CN">
+          <div class="s-sign">
+            <div><p class="s-eyebrow" data-site>武夷山国家公园</p><p class="s-title" data-t="bookTitle">访客停车预约</p></div>
+            <div class="s-lang"><span data-lang="en">EN</span><span data-lang="zh" class="on">中文</span></div>
+          </div>
+          <div class="s-body">
+            <div class="s-card">
+              <div class="s-row"><span class="lbl" data-t="plate">车牌号</span><span class="val plate-val" data-t="plateVal">闽F12345</span><span class="chev">›</span></div>
+              <div class="s-row"><span class="lbl" data-t="phone">手机号</span><span class="val" data-t="phoneVal">13800138000</span></div>
+            </div>
+            <div class="s-card">
+              <div class="s-head" data-t="location">预约位置</div>
+              <div class="tiles">
+                <div class="tile on"><span class="radio"></span><span data-t="lotA">桐木关停车场</span></div>
+                <div class="tile"><span class="radio"></span><span data-t="lotB">九曲溪南门停车场</span></div>
+              </div>
+              <div class="s-row"><span class="lbl" data-t="date">预约日期</span><span class="val">2026-10-18</span><span class="chev">›</span></div>
+              <div class="avail"><div><b data-t="left">剩余车位</b><small data-t="total">车位总数 40</small></div><strong>12</strong></div>
+            </div>
+          </div>
+          <div class="s-foot"><div class="s-btn" data-t="submit">提交</div></div>
+        </div></div>
+        <figcaption>Booking form. The availability count is the largest number on the screen and turns red when the lot is full.</figcaption>
+      </figure>
+
+      <figure class="phone-fig">
+        <div class="phone"><div class="screen" id="pass-screen" lang="zh-CN">
+          <div class="s-sign">
+            <div><p class="s-eyebrow" data-site>武夷山国家公园</p><p class="s-title" data-t="passTitle">停车预约凭证</p></div>
+            <div class="s-lang"><span data-lang="en">EN</span><span data-lang="zh" class="on">中文</span></div>
+          </div>
+          <div class="s-body">
+            <div class="s-card">
+              <div class="pass-head"><span id="pass-status">预约成功</span><span>2026-10-18</span></div>
+              <div class="pass-main">
+                <div class="pass-park" data-t="lotA">桐木关停车场</div>
+                <div class="qr-block">
+                  <canvas id="qr" width="29" height="29" aria-label="Example QR code"></canvas>
+                  <p><span data-t="notice1">入场时请向工作人员</span><br><span data-t="notice2">出示此预约二维码</span></p>
+                </div>
+              </div>
+              <div class="tear" aria-hidden="true"></div>
+              <div class="stub">
+                <div><span data-t="plate">车牌号</span><span class="plate" data-t="plateVal">闽F12345</span></div>
+                <div><span data-t="phone">手机号</span><span data-t="phoneVal">13800138000</span></div>
+              </div>
+            </div>
+            <div class="s-btn danger cancel-btn" data-t="cancel">取消预约</div>
+          </div>
+        </div></div>
+        <label class="toggle"><input type="checkbox" id="cancelled"> Show a cancelled pass</label>
+        <figcaption>Parking pass. A cancelled pass loses its QR and its cancel button. The status is written out, not shown by color alone.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="kicker">Admin console · Element Plus</span>
+      <h2>The same sign, on the staff side</h2>
+      <p>The sidebar and login use the signboard. Element Plus's whole primary ramp comes from the brand token. The four counters share one accent because they are the same kind of number.</p>
+    </div>
+    <div class="admin-scroll">
+      <div class="admin" lang="zh-CN">
+        <aside class="a-side">
+          <div class="a-logo"><span class="plaque" aria-hidden="true">P</span><span data-t="brand">停车场管理</span></div>
+          <span class="a-item on" data-t="navHome">首页</span><span class="a-item" data-t="navLots">停车场管理</span><span class="a-item" data-t="navBookings">预约记录</span><span class="a-item" data-t="navAdmins">管理员</span>
+        </aside>
+        <div class="a-main">
+          <div class="a-top"><span data-t="navHome">首页</span> <small data-site>武夷山国家公园</small></div>
+          <div class="a-content">
+            <div class="stats">
+              <div class="stat"><i data-t="iDay">日</i><div><b>18</b><small data-t="statDay">当日预约</small></div></div>
+              <div class="stat"><i data-t="iWeek">周</i><div><b>126</b><small data-t="statWeek">本周预约</small></div></div>
+              <div class="stat"><i data-t="iMonth">月</i><div><b>534</b><small data-t="statMonth">本月预约</small></div></div>
+              <div class="stat"><i data-t="iYear">年</i><div><b>4,812</b><small data-t="statYear">本年预约</small></div></div>
+            </div>
+            <div class="table">
+              <div class="tr th"><span data-t="plate">车牌号</span><span data-t="lot">停车场</span><span data-t="date">预约日期</span><span data-t="status">状态</span></div>
+              <div class="tr"><span class="pl" data-t="plateVal">闽F12345</span><span data-t="lotA">桐木关停车场</span><span>2026-10-18</span><span class="tag" data-t="confirmed">预约成功</span></div>
+              <div class="tr"><span class="pl" data-t="plate2">粤A88K21</span><span data-t="lotB">九曲溪南门停车场</span><span>2026-10-18</span><span class="tag" data-t="confirmed">预约成功</span></div>
+              <div class="tr"><span class="pl" data-t="plate3">沪C6D901</span><span data-t="lotA">桐木关停车场</span><span>2026-10-17</span><span class="tag off" data-t="cancelled">已取消</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="kicker">Tokens · packages/ui/src/tokens.css</span>
+      <h2>What a park changes, and what it never changes</h2>
+      <p>Values and contrast ratios are read live from the token file. Switch presets above and the brand panel updates.</p>
+    </div>
+    <div class="board">
+      <div class="panel">
+        <h3>Brand · per park</h3>
+        <p>Six tokens, four of them set per preset.</p>
+        <div class="sw"><span class="chip pair" style="background:var(--np-brand);color:#fff">A</span><div><code>--np-brand</code><span class="hex" data-hex="--np-brand"></span></div><span class="ratio" data-fg="#ffffff" data-bg="--np-brand"></span></div>
+        <div class="sw"><span class="chip" style="background:var(--np-brand-strong)"></span><div><code>--np-brand-strong</code><span class="hex" data-hex="--np-brand-strong"></span></div><span class="ratio" data-fg="#ffffff" data-bg="--np-brand-strong"></span></div>
+        <div class="sw"><span class="chip pair" style="background:var(--np-brand-soft);color:var(--np-ink)">A</span><div><code>--np-brand-soft</code><span class="hex" data-hex="--np-brand-soft"></span></div><span class="ratio" data-fg="--np-ink" data-bg="--np-brand-soft"></span></div>
+        <div class="sw"><span class="chip pair" style="background:var(--np-sign);color:var(--np-on-sign)">A</span><div><code>--np-sign + on-sign</code><span class="hex" data-hex="--np-sign"></span></div><span class="ratio" data-fg="--np-on-sign" data-bg="--np-sign"></span></div>
+        <div class="sw"><span class="chip pair" style="background:var(--np-sign);color:var(--np-on-sign-muted)">A</span><div><code>--np-on-sign-muted</code><span class="hex" data-hex="--np-on-sign-muted"></span></div><span class="ratio" data-fg="--np-on-sign-muted" data-bg="--np-sign"></span></div>
+      </div>
+
+      <div class="panel">
+        <h3>Status · every park</h3>
+        <p>Fixed so staff read every deployment the same way.</p>
+        <div class="sw"><span class="chip pair" style="background:var(--np-success-soft);color:var(--np-success)">✓</span><div><code>success</code><span class="hex">预约成功 · lots available</span></div><span class="ratio" data-fg="--np-success" data-bg="--np-success-soft"></span></div>
+        <div class="sw"><span class="chip pair" style="background:var(--np-warning-soft);color:var(--np-warning)">!</span><div><code>warning</code><span class="hex">Caution, form hints</span></div><span class="ratio" data-fg="--np-warning" data-bg="--np-warning-soft"></span></div>
+        <div class="sw"><span class="chip pair" style="background:var(--np-danger-soft);color:var(--np-danger)">×</span><div><code>danger</code><span class="hex">Full, errors, cancel</span></div><span class="ratio" data-fg="--np-danger" data-bg="--np-danger-soft"></span></div>
+        <div class="sw"><span class="chip pair" style="background:var(--np-neutral-soft);color:var(--np-neutral)">–</span><div><code>neutral</code><span class="hex">已取消 · inactive</span></div><span class="ratio" data-fg="--np-neutral" data-bg="--np-neutral-soft"></span></div>
+      </div>
+
+      <div class="panel">
+        <h3>Ground and ink</h3>
+        <p>Lichen-grey neutrals, measured on page paper.</p>
+        <div class="sw"><span class="chip" style="background:var(--np-paper)"></span><div><code>--np-paper</code><span class="hex" data-hex="--np-paper"></span></div><span></span></div>
+        <div class="sw"><span class="chip pair" style="background:var(--np-paper);color:var(--np-ink)">A</span><div><code>--np-ink</code><span class="hex" data-hex="--np-ink"></span></div><span class="ratio" data-fg="--np-ink" data-bg="--np-paper"></span></div>
+        <div class="sw"><span class="chip pair" style="background:var(--np-paper);color:var(--np-ink-2)">A</span><div><code>--np-ink-2</code><span class="hex" data-hex="--np-ink-2"></span></div><span class="ratio" data-fg="--np-ink-2" data-bg="--np-paper"></span></div>
+        <div class="sw"><span class="chip pair" style="background:var(--np-paper);color:var(--np-ink-3)">A</span><div><code>--np-ink-3</code><span class="hex" data-hex="--np-ink-3"></span></div><span class="ratio" data-fg="--np-ink-3" data-bg="--np-paper"></span></div>
+        <div class="sw"><span class="chip" style="background:var(--np-line)"></span><div><code>--np-line</code><span class="hex" data-hex="--np-line"></span></div><span></span></div>
+      </div>
+
+      <div class="panel">
+        <h3>Type · system faces</h3>
+        <p>No web fonts: blocked in mainland China and too heavy for CJK.</p>
+        <div class="type-row"><code>2xl · 30</code><span style="font-size:30px;font-weight:800">12 剩余</span></div>
+        <div class="type-row"><code>xl · 22</code><span style="font-size:22px;font-weight:700">访客停车预约</span></div>
+        <div class="type-row"><code>lg · 17</code><span style="font-size:17px;font-weight:700;letter-spacing:.08em">闽F12345</span></div>
+        <div class="type-row"><code>md · 15</code><span style="font-size:15px">桐木关停车场 · body</span></div>
+        <div class="type-row"><code>sm · 13</code><span style="font-size:13px">入场时请向工作人员出示预约二维码</span></div>
+        <div class="type-row"><code>xs · 12</code><span style="font-size:12px">EN / 中文</span></div>
+      </div>
+
+      <div class="panel">
+        <h3>Space and shape</h3>
+        <p>4px grid. Tap targets at least 48px.</p>
+        <div class="space-row"><code>space-1 · 4</code><i style="width:4px"></i></div>
+        <div class="space-row"><code>space-2 · 8</code><i style="width:8px"></i></div>
+        <div class="space-row"><code>space-3 · 12</code><i style="width:12px"></i></div>
+        <div class="space-row"><code>space-4 · 16</code><i style="width:16px"></i></div>
+        <div class="space-row"><code>space-5 · 24</code><i style="width:24px"></i></div>
+        <div class="space-row"><code>space-6 · 32</code><i style="width:32px"></i></div>
+        <div class="space-row"><code>tap · 48</code><i style="width:48px"></i></div>
+        <div class="radii">
+          <div><i style="border-radius:4px"></i>sm 4 · plate</div>
+          <div><i style="border-radius:8px"></i>md 8 · button</div>
+          <div><i style="border-radius:12px"></i>lg 12 · card</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="kicker">Deploy</span>
+      <h2>Brand a new park in one build command</h2>
+      <p>All variables are optional. With none set you get the mainland-China H5 that is already deployed. On the server, set <code>TZ</code> to the park's time zone. The API contract and the gate QR payload stay the same.</p>
+    </div>
+    <div class="config">
+      <pre id="cmd"></pre>
+      <ul class="rules">
+        <li>Style through <code>--np-*</code> or the <code>--van-*</code>, <code>--el-*</code> and <code>--cp-*</code> aliases mapped from them. Never write hex values in views.</li>
+        <li>Add a preset with one <code>:root[data-park]</code> block of four hex values. Keep white on brand at 4.5:1 or higher and cream on sign at 7:1 or higher.</li>
+        <li>Don't use <code>color-mix()</code> in the public H5, because older WeChat WebViews lack it.</li>
+        <li>Destructive actions use plain danger buttons, never brand-primary ones.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<script>
+  const root = document.documentElement
+  const PRESETS = ['forest', 'canyon', 'glacier', 'coast']
+  const tok = (name) => getComputedStyle(root).getPropertyValue(name).trim()
+  const store = {
+    get(k) { try { return localStorage.getItem(k) } catch { return null } },
+    set(k, v) { try { localStorage.setItem(k, v) } catch { /* storage blocked */ } },
+  }
+
+  function rgb(hex) {
+    let h = hex.replace('#', '')
+    if (h.length === 3) h = [...h].map((c) => c + c).join('')
+    return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
+  }
+  function lum(hex) {
+    const [r, g, b] = rgb(hex).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  }
+  function ratio(a, b) {
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
+    return (hi + 0.05) / (lo + 0.05)
+  }
+
+  // Each preset button shows its brand + sign colors, read from tokens.css by
+  // briefly applying that preset, so the page never keeps its own copy of the hex.
+  root.dataset.park = PRESETS.includes(store.get('np-park')) ? store.get('np-park') : 'forest'
+  const current = root.dataset.park
+  for (const btn of document.querySelectorAll('[data-preset]')) {
+    root.dataset.park = btn.dataset.preset
+    const [a, b] = btn.querySelectorAll('.dots i')
+    a.style.background = tok('--np-brand')
+    b.style.background = tok('--np-sign')
+  }
+  root.dataset.park = current
+
+  function render() {
+    for (const btn of document.querySelectorAll('[data-preset]')) {
+      btn.setAttribute('aria-pressed', String(btn.dataset.preset === root.dataset.park))
+    }
+    for (const el of document.querySelectorAll('[data-hex]')) el.textContent = tok(el.dataset.hex)
+    for (const el of document.querySelectorAll('[data-fg]')) {
+      const fg = el.dataset.fg.startsWith('#') ? el.dataset.fg : tok(el.dataset.fg)
+      const r = ratio(fg, tok(el.dataset.bg))
+      const grade = r >= 7 ? 'AAA' : r >= 4.5 ? 'AA' : 'fail'
+      el.dataset.grade = grade
+      el.textContent = `${r.toFixed(1)}:1 ${grade}`
+    }
+    const name = document.getElementById('site-name').value.trim()
+    for (const el of document.querySelectorAll('[data-site]')) {
+      el.textContent = name
+      el.hidden = !name
+    }
+    const q = (s) => (/[\s'"]/.test(s) ? `'${s.replace(/'/g, '')}'` : s)
+    document.getElementById('cmd').textContent =
+      (region === 'intl' ? 'VITE_REGION=intl \\\n' : '') +
+      (name ? `VITE_SITE_NAME=${q(name)} \\\n` : '') +
+      `VITE_PARK_THEME=${root.dataset.park} \\\n./scripts/build.sh`
+  }
+
+  // Specimen copy per visitor region (the apps take theirs from locales/).
+  const COPY = {
+    cn: {
+      site: '武夷山国家公园', lang: 'zh-CN', bookTitle: '访客停车预约', passTitle: '停车预约凭证',
+      plate: '车牌号', plateVal: '闽F12345', plate2: '粤A88K21', plate3: '沪C6D901', phone: '手机号', phoneVal: '13800138000',
+      location: '预约位置', lotA: '桐木关停车场', lotB: '九曲溪南门停车场', lot: '停车场', date: '预约日期', status: '状态',
+      left: '剩余车位', total: '车位总数 40', submit: '提交', notice1: '入场时请向工作人员', notice2: '出示此预约二维码',
+      cancel: '取消预约', confirmed: '预约成功', cancelled: '已取消', brand: '停车场管理',
+      navHome: '首页', navLots: '停车场管理', navBookings: '预约记录', navAdmins: '管理员',
+      statDay: '当日预约', statWeek: '本周预约', statMonth: '本月预约', statYear: '本年预约',
+      iDay: '日', iWeek: '周', iMonth: '月', iYear: '年',
+    },
+    intl: {
+      site: 'Fiordland National Park', lang: 'en', bookTitle: 'Visitor Parking Booking', passTitle: 'Parking Pass',
+      plate: 'License Plate', plateVal: 'AB12 CDE', plate2: 'M-AB 1234', plate3: '品川 300 さ 12-34', phone: 'Phone Number', phoneVal: '+447700900123',
+      location: 'Booking Location', lotA: 'Te Anau Downs Car Park', lotB: 'Milford Sound Visitor Lot', lot: 'Parking Lot', date: 'Booking Date', status: 'Status',
+      left: 'Available Spaces', total: 'Total Spaces 40', submit: 'Submit', notice1: 'Show this QR code to staff', notice2: 'at the entrance',
+      cancel: 'Cancel Booking', confirmed: 'Confirmed', cancelled: 'Cancelled', brand: 'Parking Management',
+      navHome: 'Dashboard', navLots: 'Parking Lots', navBookings: 'Booking Records', navAdmins: 'Administrators',
+      statDay: 'Today', statWeek: 'This week', statMonth: 'This month', statYear: 'This year',
+      iDay: 'D', iWeek: 'W', iMonth: 'M', iYear: 'Y',
+    },
+  }
+  let region = store.get('np-region') === 'intl' ? 'intl' : 'cn'
+
+  function applyRegion() {
+    const copy = COPY[region]
+    for (const el of document.querySelectorAll('[data-t]')) el.textContent = copy[el.dataset.t]
+    for (const el of document.querySelectorAll('.screen, .admin')) el.lang = copy.lang
+    for (const el of document.querySelectorAll('[data-lang]')) el.classList.toggle('on', (el.dataset.lang === 'en') === (region === 'intl'))
+    for (const btn of document.querySelectorAll('[data-region]')) btn.setAttribute('aria-pressed', String(btn.dataset.region === region))
+    const cancelled = document.getElementById('cancelled').checked
+    document.getElementById('pass-status').textContent = cancelled ? copy.cancelled : copy.confirmed
+    const nameInput = document.getElementById('site-name')
+    if (Object.values(COPY).some((c) => c.site === nameInput.value)) nameInput.value = copy.site
+  }
+
+  document.querySelector('.regions').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-region]')
+    if (!btn) return
+    region = btn.dataset.region
+    store.set('np-region', region)
+    applyRegion()
+    render()
+  })
+
+  document.querySelector('.biomes').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-preset]')
+    if (!btn) return
+    root.dataset.park = btn.dataset.preset
+    store.set('np-park', btn.dataset.preset)
+    render()
+  })
+  document.getElementById('site-name').addEventListener('input', render)
+  document.getElementById('cancelled').addEventListener('change', (e) => {
+    document.getElementById('pass-screen').classList.toggle('is-cancelled', e.target.checked)
+    applyRegion()
+  })
+
+  // Illustrative QR (finder patterns + seeded modules). Not scannable, and
+  // not the real payload. The app renders the real one with the qrcode library.
+  ;(function drawQr() {
+    const c = document.getElementById('qr')
+    const g = c.getContext('2d')
+    const n = 29
+    let seed = 7
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+    g.fillStyle = '#fff'
+    g.fillRect(0, 0, n, n)
+    g.fillStyle = '#1b201c'
+    for (let y = 2; y < n - 2; y++) for (let x = 2; x < n - 2; x++) if (rnd() > 0.52) g.fillRect(x, y, 1, 1)
+    for (const [fx, fy] of [[2, 2], [n - 9, 2], [2, n - 9]]) {
+      g.fillStyle = '#fff'; g.fillRect(fx - 1, fy - 1, 9, 9)
+      g.fillStyle = '#1b201c'; g.fillRect(fx, fy, 7, 7)
+      g.fillStyle = '#fff'; g.fillRect(fx + 1, fy + 1, 5, 5)
+      g.fillStyle = '#1b201c'; g.fillRect(fx + 2, fy + 2, 3, 3)
+    }
+  })()
+
+  applyRegion()
+  render()
+</script>

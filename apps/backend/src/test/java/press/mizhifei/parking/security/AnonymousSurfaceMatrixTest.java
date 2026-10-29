@@ -44,12 +44,11 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 @AutoConfigureMockMvc
 class AnonymousSurfaceMatrixTest {
 
-    /** The anonymous surface of the deployed citizen H5 — exactly these seven, nothing else. */
+    /** The anonymous surface of the deployed citizen H5 — exactly these six, nothing else. */
     private static final Set<PublicRoute> EXPECTED_PUBLIC = Set.of(
             new PublicRoute(HttpMethod.POST, "/auth/login"),
             new PublicRoute(HttpMethod.GET, "/parking/park/list"),
             new PublicRoute(HttpMethod.GET, "/parking/park/leftLotNum"),
-            new PublicRoute(HttpMethod.GET, "/parking/booking/list"),
             new PublicRoute(HttpMethod.GET, "/parking/booking/last"),
             new PublicRoute(HttpMethod.POST, "/parking/booking"),
             new PublicRoute(HttpMethod.PUT, "/parking/booking"));
@@ -64,7 +63,7 @@ class AnonymousSurfaceMatrixTest {
     }
 
     @Test
-    @DisplayName("route matrix: the seven public routes pass anonymously; every other route answers 401")
+    @DisplayName("route matrix: the six public routes pass anonymously; every other route answers 401")
     void anonymousSurface_matchesExpectedSetExactly() throws Exception {
         List<String> violations = new ArrayList<>();
         Set<PublicRoute> discoveredPublic = new LinkedHashSet<>();

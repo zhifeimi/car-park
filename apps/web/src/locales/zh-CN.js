@@ -29,6 +29,7 @@ export default {
     language: '语言',
     english: 'English',
     chinese: '简体中文',
+    languageName: '简体中文',
   },
   nav: {
     brandTitle: '停车场管理',
@@ -44,11 +45,11 @@ export default {
   },
   login: {
     brandTitle: '停车场预约管理系统',
-    brandSubtitle: '广州长岭街道 · 黄麻/岭头社区',
     username: '账号',
     password: '密码',
     usernameRequired: '请输入账号',
     passwordRequired: '请输入密码',
+    pageTitle: '登录',
     loginBtn: '登 录',
     loggingIn: '登 录 中...',
     footer: '停车场预约管理系统',

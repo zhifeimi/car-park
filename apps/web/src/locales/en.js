@@ -29,6 +29,7 @@ export default {
     language: 'Language',
     english: 'English',
     chinese: '简体中文',
+    languageName: 'English',
   },
   nav: {
     brandTitle: 'Parking Management',
@@ -44,11 +45,11 @@ export default {
   },
   login: {
     brandTitle: 'Parking Booking System',
-    brandSubtitle: 'Changling Street, Guangzhou · Huangma & Lingtou Communities',
     username: 'Username',
     password: 'Password',
     usernameRequired: 'Please enter username',
     passwordRequired: 'Please enter password',
+    pageTitle: 'Sign in',
     loginBtn: 'Log In',
     loggingIn: 'Logging in...',
     footer: 'Visitor Parking Booking System',

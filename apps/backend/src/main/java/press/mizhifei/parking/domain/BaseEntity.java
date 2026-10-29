@@ -16,7 +16,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * ({@code remark}, {@code create_by}, {@code create_time}, {@code update_by}, {@code update_time}).
  *
  * <p>Wire format kept identical to the legacy system: datetimes serialize as
- * {@code yyyy-MM-dd HH:mm:ss} (Asia/Shanghai).
+ * {@code yyyy-MM-dd HH:mm:ss} (the park's zone, {@code app.park.time-zone}).
  */
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)

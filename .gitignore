@@ -29,3 +29,6 @@ secrets/
 .idea/
 .vscode/
 *.iml
+
+# Claude Code personal settings
+.claude/settings.local.json

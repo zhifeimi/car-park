@@ -8,19 +8,19 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="en" :disabled="locale === 'en'">English</el-dropdown-item>
-            <el-dropdown-item command="zh-CN" :disabled="locale === 'zh-CN'">简体中文</el-dropdown-item>
+            <el-dropdown-item v-for="option in localeOptions" :key="option.code" :command="option.code"
+              :disabled="locale === option.code" :lang="option.code">{{ option.label }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
     </div>
 
+    <div class="login-brand">
+      <span class="brand-icon">P</span>
+      <h1 class="title">{{ siteName || t('login.brandTitle') }}</h1>
+      <p v-if="siteName" class="subtitle">{{ t('login.brandTitle') }}</p>
+    </div>
     <div class="login-card">
-      <div class="login-brand">
-        <span class="brand-icon">P</span>
-        <h3 class="title">{{ t('login.brandTitle') }}</h3>
-        <p class="subtitle">{{ t('login.brandSubtitle') }}</p>
-      </div>
       <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
         <el-form-item prop="username">
           <el-input v-model="loginForm.username" size="large" auto-complete="off" :placeholder="t('login.username')">
@@ -57,9 +57,9 @@ import { useI18n } from '@/locales'
 
 const router = useRouter()
 const userStore = useUserStore()
-const { locale, setLocale, t } = useI18n()
+const { locale, setLocale, t, siteName, localeOptions } = useI18n()
 
-const currentLocaleLabel = computed(() => (locale.value === 'zh-CN' ? '简体中文' : 'English'))
+const currentLocaleLabel = computed(() => localeOptions.find((o) => o.code === locale.value)?.label)
 
 function handleLocaleChange(lang) {
   setLocale(lang)
@@ -88,21 +88,24 @@ async function handleLogin() {
 </script>
 
 <style scoped>
+/* The login screen is the park's entrance sign: flat signboard ground,
+   cream lettering, one plain form card. */
 .login {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #334155 100%);
+  gap: var(--np-space-5);
+  min-height: 100vh;
+  padding: var(--np-space-6) var(--np-space-4);
+  background: var(--np-sign);
   position: relative;
-  overflow: hidden;
 }
 
 .login-lang-switch {
   position: absolute;
   top: 24px;
   right: 24px;
-  z-index: 10;
 }
 
 .lang-btn {
@@ -110,56 +113,20 @@ async function handleLogin() {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
+  color: var(--np-on-sign);
   padding: 6px 14px;
-  border-radius: 20px;
+  border-radius: 999px;
   font-size: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.2s;
+  border: 1px solid var(--np-on-sign-line);
+  transition: background 0.15s;
 }
 
 .lang-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.login::before {
-  content: '';
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(67, 97, 238, 0.15) 0%, transparent 70%);
-  top: -200px;
-  right: -100px;
-}
-
-.login::after {
-  content: '';
-  position: absolute;
-  width: 400px;
-  height: 400px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(46, 196, 182, 0.1) 0%, transparent 70%);
-  bottom: -100px;
-  left: -50px;
-}
-
-.login-card {
-  width: 400px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
+  background: var(--np-on-sign-wash);
 }
 
 .login-brand {
   text-align: center;
-  padding: 36px 28px 20px;
 }
 
 .brand-icon {
@@ -168,34 +135,43 @@ async function handleLogin() {
   justify-content: center;
   width: 56px;
   height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, var(--cp-primary), var(--cp-primary-light));
-  color: #fff;
-  font-size: 26px;
+  border-radius: var(--np-radius-md);
+  background: var(--np-on-sign);
+  color: var(--np-sign);
+  font-size: 30px;
   font-weight: 800;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 14px rgba(67, 97, 238, 0.3);
+  margin-bottom: var(--np-space-4);
 }
 
 .title {
-  margin: 0 0 6px;
-  font-size: 20px;
+  margin: 0;
+  font-size: var(--np-text-xl);
   font-weight: 700;
-  color: var(--cp-text-primary);
+  letter-spacing: 0.04em;
+  color: var(--np-on-sign);
+  text-wrap: balance;
 }
 
 .subtitle {
-  margin: 0;
-  font-size: 13px;
-  color: var(--cp-text-muted);
+  margin: var(--np-space-2) 0 0;
+  font-size: var(--np-text-sm);
+  letter-spacing: 0.08em;
+  color: var(--np-on-sign-muted);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--np-surface);
+  border-radius: var(--np-radius-lg);
 }
 
 .login-form {
-  padding: 8px 32px 32px;
+  padding: 28px 28px 8px;
 }
 
 .login-form :deep(.el-input__wrapper) {
-  border-radius: 8px;
+  border-radius: var(--np-radius-md);
 }
 
 .login-footer {
@@ -203,8 +179,8 @@ async function handleLogin() {
   bottom: 20px;
   width: 100%;
   text-align: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--np-on-sign-muted);
+  opacity: 0.7;
   font-size: 12px;
-  z-index: 1;
 }
 </style>

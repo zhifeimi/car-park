@@ -1,42 +1,62 @@
+/* Admin console theme: maps the shared Trailhead tokens (packages/ui/src/tokens.css)
+   onto the --cp-* names the views use and onto Element Plus. color-mix() is fine
+   here: the console is staff-only on current desktop browsers. */
 :root {
-  --cp-primary: #4361ee;
-  --cp-primary-light: #6c83f4;
-  --cp-primary-lighter: #e8ecfd;
-  --cp-success: #2ec4b6;
-  --cp-success-light: #e6f7f5;
-  --cp-warning: #f8961e;
-  --cp-warning-light: #fef3e2;
-  --cp-danger: #e63946;
-  --cp-danger-light: #fde8ea;
-  --cp-info: #6c757d;
+  --cp-primary: var(--np-brand);
+  --cp-primary-light: color-mix(in srgb, var(--np-brand), #fff 30%);
+  --cp-primary-lighter: var(--np-brand-soft);
+  --cp-success: var(--np-success);
+  --cp-success-light: var(--np-success-soft);
+  --cp-warning: var(--np-warning);
+  --cp-warning-light: var(--np-warning-soft);
+  --cp-danger: var(--np-danger);
+  --cp-danger-light: var(--np-danger-soft);
+  --cp-info: var(--np-neutral);
 
-  --cp-sidebar-bg: #1e293b;
-  --cp-sidebar-logo-bg: #0f172a;
-  --cp-sidebar-text: #94a3b8;
-  --cp-sidebar-active: #4361ee;
-  --cp-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --cp-sidebar-bg: var(--np-sign);
+  --cp-sidebar-logo-bg: var(--np-sign);
+  --cp-sidebar-text: var(--np-on-sign-muted);
+  --cp-sidebar-active: var(--np-brand);
+  --cp-sidebar-hover: rgba(243, 238, 223, 0.08);
   --cp-sidebar-width: 240px;
 
-  --cp-header-bg: #fff;
-  --cp-header-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --cp-header-bg: var(--np-surface);
+  --cp-header-shadow: 0 1px 0 var(--np-line);
 
-  --cp-body-bg: #f1f5f9;
-  --cp-card-bg: #fff;
-  --cp-card-radius: 12px;
-  --cp-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --cp-body-bg: var(--np-paper);
+  --cp-card-bg: var(--np-surface);
+  --cp-card-radius: var(--np-radius-lg);
+  --cp-card-shadow: var(--np-shadow);
 
-  --cp-text-primary: #1e293b;
-  --cp-text-secondary: #64748b;
-  --cp-text-muted: #94a3b8;
-  --cp-border: #e2e8f0;
+  --cp-text-primary: var(--np-ink);
+  --cp-text-secondary: var(--np-ink-2);
+  --cp-text-muted: var(--np-ink-3);
+  --cp-border: var(--np-line);
 
-  --cp-radius-sm: 6px;
-  --cp-radius-md: 8px;
-  --cp-radius-lg: 12px;
+  --cp-radius-sm: var(--np-radius-sm);
+  --cp-radius-md: var(--np-radius-md);
+  --cp-radius-lg: var(--np-radius-lg);
 
-  --el-color-primary: var(--cp-primary);
-  --el-color-primary-light-3: var(--cp-primary-light);
-  --el-color-primary-light-9: var(--cp-primary-lighter);
+  /* Element Plus: light-N = N0% white, as its SCSS computes them */
+  --el-color-primary: var(--np-brand);
+  --el-color-primary-light-3: color-mix(in srgb, var(--np-brand), #fff 30%);
+  --el-color-primary-light-5: color-mix(in srgb, var(--np-brand), #fff 50%);
+  --el-color-primary-light-7: color-mix(in srgb, var(--np-brand), #fff 70%);
+  --el-color-primary-light-8: color-mix(in srgb, var(--np-brand), #fff 80%);
+  --el-color-primary-light-9: var(--np-brand-soft);
+  --el-color-primary-dark-2: var(--np-brand-strong);
+  --el-color-success: var(--np-success);
+  --el-color-warning: var(--np-warning);
+  --el-color-danger: var(--np-danger);
+  --el-color-error: var(--np-danger);
+  --el-color-info: var(--np-neutral);
+  --el-text-color-primary: var(--np-ink);
+  --el-text-color-regular: var(--np-ink-2);
+  --el-text-color-secondary: var(--np-ink-3);
+  --el-border-color: var(--np-line);
+  --el-border-color-light: var(--np-line);
+  --el-bg-color-page: var(--np-paper);
+  --el-font-family: var(--np-font);
 }
 
 *,
@@ -47,25 +67,26 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--np-font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--cp-text-primary);
+  background: var(--cp-body-bg);
 }
 
 .el-table {
   --el-table-border-color: var(--cp-border);
-  --el-table-header-bg-color: #f8fafc;
-  --el-table-row-hover-bg-color: #f1f5f9;
+  --el-table-header-bg-color: var(--np-paper);
+  --el-table-row-hover-bg-color: var(--np-brand-soft);
   border-radius: var(--cp-radius-md);
   overflow: hidden;
+  font-variant-numeric: tabular-nums;
 }
 
 .el-table th.el-table__cell {
   font-weight: 600;
   color: var(--cp-text-secondary);
   font-size: 13px;
-  text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 
@@ -89,16 +110,15 @@ body {
 .el-button--primary {
   --el-button-bg-color: var(--cp-primary);
   --el-button-border-color: var(--cp-primary);
-}
-
-.el-button--primary:hover {
-  --el-button-hover-bg-color: var(--cp-primary-light);
-  --el-button-hover-border-color: var(--cp-primary-light);
+  --el-button-hover-bg-color: var(--np-brand-strong);
+  --el-button-hover-border-color: var(--np-brand-strong);
+  --el-button-active-bg-color: var(--np-brand-strong);
+  --el-button-active-border-color: var(--np-brand-strong);
 }
 
 .el-tag--success {
   --el-tag-bg-color: var(--cp-success-light);
-  --el-tag-text-color: #0d9488;
+  --el-tag-text-color: var(--cp-success);
   --el-tag-border-color: transparent;
 }
 
@@ -109,7 +129,7 @@ body {
 }
 
 .el-tag--info {
-  --el-tag-bg-color: #f1f5f9;
+  --el-tag-bg-color: var(--np-neutral-soft);
   --el-tag-text-color: var(--cp-info);
   --el-tag-border-color: transparent;
 }

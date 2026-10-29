@@ -8,13 +8,16 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.time.ZoneId;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -38,8 +41,20 @@ class ParkServiceTest {
     @Mock
     ParkRepository parkRepository;
 
-    @InjectMocks
     ParkService parkService;
+
+    /**
+     * 14:30 UTC is already 01:30 the next day in Sydney: "today" must be the park's day, so a
+     * regression to the host/UTC clock passes 2026-10-21 and the exact-date matchers fail.
+     */
+    private static final Clock PARK_CLOCK =
+            Clock.fixed(Instant.parse("2026-10-21T14:30:00Z"), ZoneId.of("Australia/Sydney"));
+    private static final LocalDate PARK_TODAY = LocalDate.of(2026, 10, 22);
+
+    @BeforeEach
+    void setUp() {
+        parkService = new ParkService(parkRepository, PARK_CLOCK);
+    }
 
     private static final String PARK_NAME = "黄麻社区停车场";
     private static final LocalDate DATE_BEGIN = LocalDate.of(2026, 9, 1);
@@ -199,15 +214,17 @@ class ParkServiceTest {
     void list_withCriteria_delegatesToRepositoryWithPageable() {
         ParkCriteria criteria = new ParkCriteria("黄麻", 10L, "2026-09-01", null, null, null, 1, 10);
         when(parkRepository.search(
-                eq("黄麻"), eq(10L), eq("2026-09-01"), eq(null), eq(null), eq(null), any(Pageable.class)
+                eq("黄麻"), eq(10L), eq("2026-09-01"), eq(null), eq(null), eq(null), eq(PARK_TODAY), any(Pageable.class)
         )).thenReturn(new PageImpl<>(List.of()));
 
         TableData data = parkService.list(criteria);
 
         assertThat(data).isNotNull();
         assertThat(data.getTotal()).isEqualTo(0);
+        // the H5 defaults and bounds its date picker by this, never by the phone's clock
+        assertThat(data.getToday()).isEqualTo(PARK_TODAY);
         verify(parkRepository).search(
-                eq("黄麻"), eq(10L), eq("2026-09-01"), eq(null), eq(null), eq(null), eq(PageRequest.of(0, 10))
+                eq("黄麻"), eq(10L), eq("2026-09-01"), eq(null), eq(null), eq(null), eq(PARK_TODAY), eq(PageRequest.of(0, 10))
         );
     }
 
@@ -215,14 +232,14 @@ class ParkServiceTest {
     void listAll_withCriteria_delegatesToRepositoryUnpaged() {
         ParkCriteria criteria = new ParkCriteria("黄麻", null, null, null, null, null, null, null);
         when(parkRepository.search(
-                eq("黄麻"), eq(null), eq(null), eq(null), eq(null), eq(null), eq(Pageable.unpaged())
+                eq("黄麻"), eq(null), eq(null), eq(null), eq(null), eq(null), eq(PARK_TODAY), eq(Pageable.unpaged())
         )).thenReturn(new PageImpl<>(List.of()));
 
         List<ParkListRow> rows = parkService.listAll(criteria);
 
         assertThat(rows).isEmpty();
         verify(parkRepository).search(
-                eq("黄麻"), eq(null), eq(null), eq(null), eq(null), eq(null), eq(Pageable.unpaged())
+                eq("黄麻"), eq(null), eq(null), eq(null), eq(null), eq(null), eq(PARK_TODAY), eq(Pageable.unpaged())
         );
     }
 
