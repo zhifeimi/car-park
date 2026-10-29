@@ -30,9 +30,13 @@ async function unwrap(promise) {
   return body
 }
 
-/** GET /parking/park/list (unpaged — mobile lists every lot). */
+/** GET /parking/park/list (unpaged — mobile lists every lot) → { rows, today }.
+ *  today = the park's date (yyyy-MM-dd) by the server's park clock; null on an older server. */
 export const listParks = () =>
-  unwrap(http.get('/parking/park/list')).then((body) => body.rows || [])
+  unwrap(http.get('/parking/park/list')).then((body) => ({
+    rows: body.rows || [],
+    today: body.today || null,
+  }))
 
 /** GET /parking/park/leftLotNum?park=&date= → remaining lots for one lot+day (may be null). */
 export const getLeftLotNum = (park, date) =>

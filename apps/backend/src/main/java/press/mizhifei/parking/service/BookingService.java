@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import press.mizhifei.parking.common.ServiceException;
 import press.mizhifei.parking.domain.BookingStatus;
 import press.mizhifei.parking.domain.Park;
+import press.mizhifei.parking.domain.Plates;
 import press.mizhifei.parking.domain.ParkingBooking;
 import press.mizhifei.parking.repository.BookingRepository;
 import press.mizhifei.parking.repository.ParkRepository;
@@ -54,6 +55,8 @@ public class BookingService {
      */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public BookingConfirmation intake(BookingCommand command) {
+        // One vehicle, one spelling: "AB-123" and "AB 123" must collide in the checks below.
+        String carPlate = Plates.canonical(command.carPlate());
         LocalDate today = LocalDate.now(clock);
         if (command.bookingDate().isBefore(today)) {
             throw new ServiceException("预约日期不能早于今天");
@@ -61,7 +64,7 @@ public class BookingService {
 
         // Fail fast (advisory): the authoritative exclusivity check happens again
         // under the park lock below, where it sees concurrently committed bookings.
-        if (bookingRepository.existsByCarPlateAndBookingDateAndStatus(command.carPlate(), command.bookingDate(), BookingStatus.ACTIVE)) {
+        if (bookingRepository.existsByCarPlateAndBookingDateAndStatus(carPlate, command.bookingDate(), BookingStatus.ACTIVE)) {
             throw new ServiceException("该车牌在所选日期已有生效的预约记录");
         }
 
@@ -72,7 +75,7 @@ public class BookingService {
 
         // Vehicle exclusivity, authoritative: re-checked under the lock with a fresh
         // committed view (see isolation note above).
-        if (bookingRepository.existsByCarPlateAndBookingDateAndStatus(command.carPlate(), command.bookingDate(), BookingStatus.ACTIVE)) {
+        if (bookingRepository.existsByCarPlateAndBookingDateAndStatus(carPlate, command.bookingDate(), BookingStatus.ACTIVE)) {
             throw new ServiceException("该车牌在所选日期已有生效的预约记录");
         }
 
@@ -92,7 +95,7 @@ public class BookingService {
 
         // Create active booking (status = ACTIVE) and persist
         ParkingBooking booking = new ParkingBooking();
-        booking.setCarPlate(command.carPlate());
+        booking.setCarPlate(carPlate);
         booking.setPark(command.park());
         booking.setBookingDate(command.bookingDate());
         booking.setCellPhone(command.cellPhone());
@@ -176,9 +179,10 @@ public class BookingService {
     /**
      * Latest booking (by create time) for a phone <em>and</em> plate. Both are required: by phone
      * alone, walking a number range would return every citizen's plate, park and booking id.
+     * The plate is matched in its canonical spelling ({@link Plates}), as intake stores it.
      */
     public ParkingBooking lastBooking(String cellPhone, String carPlate) {
-        return bookingRepository.findFirstByCellPhoneAndCarPlateOrderByCreateTimeDesc(cellPhone, carPlate)
+        return bookingRepository.findFirstByCellPhoneAndCarPlateOrderByCreateTimeDesc(cellPhone, Plates.canonical(carPlate))
                 .orElse(null);
     }
 

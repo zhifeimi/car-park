@@ -1,7 +1,8 @@
+import { watch } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import BookingAdd from '@/views/BookingAdd.vue'
 import BookingSuccess from '@/views/BookingSuccess.vue'
-import { t } from '@/locales'
+import { getLocale, siteName, t } from '@/locales'
 
 // Hash history + '/mobile/' base = parity with the deployed H5
 // (park.example.com/mobile/, hash mode in the legacy uni-app manifest).
@@ -25,11 +26,16 @@ const router = createRouter({
   routes,
 })
 
-router.afterEach((to) => {
-  if (to.meta.title) {
-    const site = import.meta.env.VITE_SITE_NAME
-    document.title = site ? `${t(to.meta.title)} · ${site}` : t(to.meta.title)
+// Locale-aware (VITE_SITE_NAME_EN for English visitors) and refreshed on a
+// language switch, not only on the next navigation.
+function setTitle(route) {
+  if (route.meta.title) {
+    const site = siteName.value
+    document.title = site ? `${t(route.meta.title)} · ${site}` : t(route.meta.title)
   }
-})
+}
+
+router.afterEach(setTitle)
+watch(getLocale, () => setTitle(router.currentRoute.value))
 
 export default router

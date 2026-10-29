@@ -38,12 +38,14 @@ public class ParkService {
      * are present, or all rows unpaged for anonymous citizen H5 invocations.
      */
     public TableData list(ParkCriteria criteria) {
+        LocalDate today = LocalDate.now(clock);
         Page<ParkListRow> page = parkRepository.search(
                 criteria.name(), criteria.lotNum(),
                 criteria.openDateBegin(), criteria.openDateEnd(),
-                criteria.openTime(), criteria.closeTime(), LocalDate.now(clock),
+                criteria.openTime(), criteria.closeTime(), today,
                 criteria.toPageable());
-        return new TableData(page.getTotalElements(), page.getContent());
+        // today = the day leftLotNum was computed for; the H5 defaults and bounds its date by it
+        return new TableData(page.getTotalElements(), page.getContent()).withToday(today);
     }
 
     /**

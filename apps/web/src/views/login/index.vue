@@ -117,12 +117,12 @@ async function handleLogin() {
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 13px;
-  border: 1px solid rgba(243, 238, 223, 0.3);
+  border: 1px solid var(--np-on-sign-line);
   transition: background 0.15s;
 }
 
 .lang-btn:hover {
-  background: rgba(243, 238, 223, 0.1);
+  background: var(--np-on-sign-wash);
 }
 
 .login-brand {

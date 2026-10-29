@@ -26,7 +26,10 @@ Deno.test('every mainland plate is also a worldwide plate', () => {
 })
 
 Deno.test('typed input normalizes to what the server accepts', () => {
-  assert(normalizePlate('  ab12   cde ') === 'AB12 CDE', 'plate: trim, collapse, upper')
+  assert(normalizePlate('  ab12   cde ') === 'AB12CDE', 'plate: separators removed, upper')
+  for (const typed of ['AB-123', 'ab 123', 'AB·123', 'AB123']) {
+    assert(normalizePlate(typed) === 'AB123', `plate: ${typed} is one vehicle`)
+  }
   assert(PLATE_REGEX.test(normalizePlate(' m-ab  1234')), 'normalized plate passes')
   assert(normalizePhone('+44 7700 900123') === '+447700900123', 'phone: strip spaces')
   assert(normalizePhone('+1 (202) 555-0143') === '+12025550143', 'phone: strip punctuation')

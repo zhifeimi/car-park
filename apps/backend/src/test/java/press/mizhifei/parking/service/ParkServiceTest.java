@@ -221,6 +221,8 @@ class ParkServiceTest {
 
         assertThat(data).isNotNull();
         assertThat(data.getTotal()).isEqualTo(0);
+        // the H5 defaults and bounds its date picker by this, never by the phone's clock
+        assertThat(data.getToday()).isEqualTo(PARK_TODAY);
         verify(parkRepository).search(
                 eq("黄麻"), eq(10L), eq("2026-09-01"), eq(null), eq(null), eq(null), eq(PARK_TODAY), eq(PageRequest.of(0, 10))
         );

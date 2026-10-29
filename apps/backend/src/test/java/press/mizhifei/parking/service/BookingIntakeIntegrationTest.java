@@ -170,6 +170,23 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     }
 
     @Test
+    @DisplayName("one vehicle written with different separators is still one vehicle")
+    void intake_samePlateDifferentSeparators_rejected() {
+        createPark(PARK_NAME, 5L);
+        BookingConfirmation first = bookingService.intake(cmd("ab-123", PARK_NAME, tomorrow));
+        assertThat(first.carPlate()).isEqualTo("AB123");
+
+        for (String spelling : new String[] {"AB 123", "AB123", "AB·123"}) {
+            assertThatThrownBy(() -> bookingService.intake(cmd(spelling, PARK_NAME, tomorrow)))
+                    .as(spelling)
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessage("该车牌在所选日期已有生效的预约记录");
+        }
+        assertThat(activeBookingCount()).isEqualTo(1);
+        assertThat(bookingService.lastBooking(CELL_PHONE, "AB 123").getId()).isEqualTo(first.id());
+    }
+
+    @Test
     void intake_unknownPark_rejected() {
         assertThatThrownBy(() -> bookingService.intake(cmd(CAR_PLATE, "不存在的停车场", tomorrow)))
                 .isInstanceOf(ServiceException.class)
