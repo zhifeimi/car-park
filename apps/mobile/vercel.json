@@ -4,13 +4,17 @@
   "installCommand": "echo 'deps resolve through deno.json at build time'",
   "buildCommand": "npx -y deno@2 task build",
   "outputDirectory": "dist",
-  "redirects": [
-    { "source": "/", "destination": "/mobile/", "permanent": false }
-  ],
-  "rewrites": [
-    { "source": "/prod-api/:path*", "destination": "https://api.carpark.zhifei.org/:path*" },
-    { "source": "/mobile", "destination": "/index.html" },
-    { "source": "/mobile/", "destination": "/index.html" },
-    { "source": "/mobile/:path+", "destination": "/:path+" }
+  "routes": [
+    { "src": "^/$", "status": 307, "headers": { "Location": "/mobile/" } },
+    {
+      "src": "^/echo/(.*)$",
+      "dest": "https://httpbin.org/anything/$1",
+      "transforms": [
+        { "type": "request.headers", "op": "set", "target": { "key": "x-proxy-secret" }, "args": "probe-not-a-secret" }
+      ]
+    },
+    { "src": "^/prod-api/(.*)$", "dest": "https://api.carpark.zhifei.org/$1" },
+    { "src": "^/mobile/?$", "dest": "/index.html" },
+    { "src": "^/mobile/(.+)$", "dest": "/$1" }
   ]
 }
