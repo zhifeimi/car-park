@@ -5,13 +5,17 @@ package press.mizhifei.parking.web.dto;
  * {@code leftLotNum} (remaining spaces for <em>today</em>: {@code lot_num - count(status=0
  * bookings)}). Interface projection over the native query in {@code ParkRepository}.
  *
- * <p>Wire shape identical to the legacy {@code Park} JSON.
+ * <p>Wire shape: the legacy {@code Park} JSON plus {@code country} (approved addition
+ * 2026-11-02; older clients ignore it).
  */
 public interface ParkListRow {
 
     Long getId();
 
     String getName();
+
+    /** ISO 3166-1 alpha-2; {@code CN} makes the H5 offer the province plate keyboard. */
+    String getCountry();
 
     Long getLotNum();
 

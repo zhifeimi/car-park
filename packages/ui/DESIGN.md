@@ -87,7 +87,7 @@ VITE_SITE_NAME=武夷山国家公园 VITE_SITE_NAME_EN='Wuyishan National Park' 
 
 | Variable | Effect |
 |---|---|
-| `VITE_REGION` | `cn` (default): province plate keyboard and strict mainland plate and 11-digit mobile formats. `intl`: free-text plate in any script and a phone number with country code (E.164) |
+| `VITE_REGION` | Phone format only. `cn` (default): 11-digit mainland mobile. `intl`: a phone number with country code (E.164). Plate entry is not build-time: it follows each lot's **Country/Region**, set in the admin console (see below) |
 | `VITE_SITE_NAME` | Eyebrow above the H5 titles, the admin login heading, and the browser tab titles |
 | `VITE_SITE_NAME_EN` | Site name shown when the visitor picks English. Falls back to `VITE_SITE_NAME` |
 | `VITE_PARK_THEME` | `forest` \| `canyon` \| `glacier` \| `coast`. Sets `<html data-park>` |
@@ -99,7 +99,7 @@ The variables never change the API contract, the gate QR payload (`{车牌号,�
 
 ## Worldwide
 
-**Plates and phones.** The server accepts any country's plate: letters of any script plus digits, with single inner spaces, hyphens or middle dots, 2 to 16 characters. It accepts a mainland mobile or an E.164 number. That character class is also the field's XSS guard (ADR-005). The H5 decides how strict to be through `VITE_REGION`. In `intl` mode it upper-cases the plate, collapses spaces, and strips spaces and punctuation from the phone number before it validates and submits. The normalized phone is also the key that finds the visitor's latest booking, so this step matters. The same sample plates (UK, DE, US, BR, JP, KR, TH, RU, CN) are pinned in `ParkingDtosTest` and `packages/utils/src/validation.test.ts`.
+**Plates and phones.** The server accepts any country's plate: letters of any script plus digits, with single inner spaces, hyphens or middle dots, 2 to 16 characters. It accepts a mainland mobile or an E.164 number. That character class is also the field's XSS guard (ADR-005). How the H5 takes the plate depends on the lot the visitor picks. Every lot has a **Country/Region** (`Park.country`, an ISO 3166-1 alpha-2 code chosen in the admin console). Only a mainland-China lot (`CN`; Hong Kong, Macao and Taiwan are `HK`, `MO` and `TW`) shows the province plate keyboard and checks the strict mainland format. Every other lot, and the form before a lot is picked, takes the plate as free text in any script, upper-cases it and drops separators. That is why the lot picker sits above the plate field. Phone strictness is still the build-time `VITE_REGION`: in `intl` mode the H5 strips spaces and punctuation from the phone number before it validates and submits. The normalized phone is also the key that finds the visitor's latest booking, so this step matters. The same sample plates (UK, DE, US, BR, JP, KR, TH, RU, CN) are pinned in `ParkingDtosTest` and `packages/utils/src/validation.test.ts`.
 
 **Languages.** The first visit follows the phone's language (`navigator.languages`) and falls back to English. A visitor's own choice is remembered. Both apps currently ship English and Simplified Chinese. To add a language:
 1. Copy `locales/en.js` to `locales/<tag>.js` in each app and translate it, including `common.langShort` (H5 switcher) or `common.languageName` (admin dropdown).
@@ -122,5 +122,5 @@ The variables never change the API contract, the gate QR payload (`{车牌号,�
 - **Dark mode.** Neither UI library is wired for it yet, and the outdoor booking flow gains little from it. When you add it, redefine only the ground, ink and soft tokens under a `[data-theme="dark"]` block.
 - **Right-to-left languages.** Arabic or Hebrew needs `dir="rtl"`, logical CSS properties in place of the remaining `left`/`right` rules, and an RTL-aware Vant setup. Do it together with the first RTL locale.
 - **More translations.** Only English and Simplified Chinese ship. Machine-translating languages that no park has reviewed would put wrong rules in front of visitors.
-- **Per-country plate rules.** `intl` mode checks characters and length, not each country's exact format. Gate staff compare the plate with the car anyway.
+- **Per-country plate rules.** Outside mainland China the H5 checks characters and length, not each country's exact format. Gate staff compare the plate with the car anyway.
 - **Per-park notice text and paid bookings.** The booking rules are generic and say booking is free, which is true because this system takes no payment. A park with its own rules needs them moved into a park field.

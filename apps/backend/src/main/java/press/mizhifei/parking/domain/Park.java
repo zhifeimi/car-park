@@ -9,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Locale;
+import java.util.Set;
 import press.mizhifei.parking.common.ServiceException;
 
 /**
@@ -28,6 +30,9 @@ import press.mizhifei.parking.common.ServiceException;
 @Table(name = "cp_park")
 public class Park extends BaseEntity {
 
+    /** ISO 3166-1 alpha-2 codes accepted for {@link #country}. */
+    private static final Set<String> ISO_COUNTRIES = Set.of(Locale.getISOCountries());
+
     /** 主键 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,6 +42,16 @@ public class Park extends BaseEntity {
     /** 停车场名称 — join key for bookings, treat as immutable (see class javadoc) */
     @Column(name = "name", length = 100)
     private String name;
+
+    /**
+     * 国家/地区 — ISO 3166-1 alpha-2, upper case ({@code CN} = mainland China; HK, MO and TW
+     * have codes of their own). Required on create and on every later save. Drives the
+     * H5's plate entry: the province keyboard for a {@code CN} lot, free text otherwise.
+     * {@code null} only on rows that predate the column and were not backfilled
+     * ({@code scripts/ops/park-country-migration.sql}); their next edit must set it.
+     */
+    @Column(name = "country", length = 2)
+    private String country;
 
     /** 可预约车位总数 */
     @Column(name = "lot_num")
@@ -68,11 +83,12 @@ public class Park extends BaseEntity {
     /**
      * Domain factory method creating a new validated Park instance.
      */
-    public static Park create(String name, Long lotNum, LocalDate openDateBegin,
+    public static Park create(String name, String country, Long lotNum, LocalDate openDateBegin,
                               LocalDate openDateEnd, LocalTime openTime,
                               LocalTime closeTime, String remark) {
         Park park = new Park();
         park.name = (name == null || name.isBlank()) ? null : name.trim();
+        park.country = normalizeCountry(country);
         park.lotNum = lotNum;
         park.openDateBegin = openDateBegin;
         park.openDateEnd = openDateEnd;
@@ -87,7 +103,7 @@ public class Park extends BaseEntity {
      * Applies partial updates to the park and validates the resulting combined state.
      * Only non-null parameters are overwritten.
      */
-    public void applyPartialUpdate(String name, Long lotNum, LocalDate openDateBegin,
+    public void applyPartialUpdate(String name, String country, Long lotNum, LocalDate openDateBegin,
                                    LocalDate openDateEnd, LocalTime openTime,
                                    LocalTime closeTime, String remark) {
         if (name != null) {
@@ -95,6 +111,9 @@ public class Park extends BaseEntity {
                 throw new ServiceException("停车场名称不能为空");
             }
             this.name = name.trim();
+        }
+        if (country != null) {
+            this.country = normalizeCountry(country);
         }
         if (lotNum != null) {
             this.lotNum = lotNum;
@@ -124,6 +143,12 @@ public class Park extends BaseEntity {
         if (name == null || name.isBlank()) {
             throw new ServiceException("停车场名称不能为空");
         }
+        if (country == null) {
+            throw new ServiceException("国家/地区不能为空");
+        }
+        if (!ISO_COUNTRIES.contains(country)) {
+            throw new ServiceException("国家/地区代码无效");
+        }
         if (lotNum != null && lotNum < 0) {
             throw new ServiceException("可预约车位总数不能为负数");
         }
@@ -133,6 +158,11 @@ public class Park extends BaseEntity {
         if (openTime != null && closeTime != null && !openTime.isBefore(closeTime)) {
             throw new ServiceException("每天开放时间必须早于关闭时间");
         }
+    }
+
+    /** Trimmed, upper case; blank → {@code null} (rejected by {@link #validateInvariants()}). */
+    private static String normalizeCountry(String country) {
+        return (country == null || country.isBlank()) ? null : country.trim().toUpperCase(Locale.ROOT);
     }
 
     public Long getId() {
@@ -149,6 +179,14 @@ public class Park extends BaseEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 
     public Long getLotNum() {

@@ -40,6 +40,7 @@ public class ExportService {
     /** Schema definition for 停车场信息数据 */
     private static final TableSchema<ParkListRow> PARK_SCHEMA = new TableSchema<>(List.of(
             new Column<>("停车场名称", ParkListRow::getName),
+            new Column<>("国家/地区", ParkListRow::getCountry),
             new Column<>("可预约车位总数", ParkListRow::getLotNum),
             new Column<>("剩余车位", ParkListRow::getLeftLotNum),
             new Column<>("可预约起始日期", r -> formatDate(r.getOpenDateBegin())),

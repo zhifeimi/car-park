@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -70,6 +71,7 @@ class ParkServiceTest {
 
         ParkCreateRequest request = new ParkCreateRequest(
                 PARK_NAME,
+                "CN",
                 30L,
                 DATE_BEGIN,
                 DATE_END,
@@ -85,11 +87,37 @@ class ParkServiceTest {
     }
 
     @Test
+    void create_storesTheChosenCountry() {
+        when(parkRepository.existsByName(PARK_NAME)).thenReturn(false);
+
+        parkService.create(new ParkCreateRequest(PARK_NAME, "gb", 30L, null, null, null, null, null));
+
+        ArgumentCaptor<Park> saved = ArgumentCaptor.forClass(Park.class);
+        verify(parkRepository).save(saved.capture());
+        assertThat(saved.getValue().getCountry()).isEqualTo("GB");
+    }
+
+    @Test
+    void update_changesCountryAndKeepsTheRest() {
+        Park existing = Park.create(PARK_NAME, "CN", 20L, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, "备注");
+        existing.setId(1L);
+        when(parkRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        parkService.update(new ParkUpdateRequest(1L, null, "HK", null, null, null, null, null, null));
+
+        assertThat(existing.getCountry()).isEqualTo("HK");
+        assertThat(existing.getName()).isEqualTo(PARK_NAME);
+        assertThat(existing.getLotNum()).isEqualTo(20L);
+        verify(parkRepository).save(existing);
+    }
+
+    @Test
     void create_duplicateName_throwsServiceException() {
         when(parkRepository.existsByName(PARK_NAME)).thenReturn(true);
 
         ParkCreateRequest request = new ParkCreateRequest(
                 PARK_NAME,
+                "CN",
                 30L,
                 DATE_BEGIN,
                 DATE_END,
@@ -111,6 +139,7 @@ class ParkServiceTest {
 
         ParkCreateRequest request = new ParkCreateRequest(
                 PARK_NAME,
+                "CN",
                 30L,
                 LocalDate.of(2026, 10, 1),
                 LocalDate.of(2026, 9, 1),
@@ -130,7 +159,7 @@ class ParkServiceTest {
 
     @Test
     void update_validRequest_mergesAndSavesPark() {
-        Park existing = Park.create(PARK_NAME, 20L, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, "旧备注");
+        Park existing = Park.create(PARK_NAME, "CN", 20L, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, "旧备注");
         existing.setId(1L);
         when(parkRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(parkRepository.existsByNameAndIdNot("新车场名称", 1L)).thenReturn(false);
@@ -138,6 +167,7 @@ class ParkServiceTest {
         ParkUpdateRequest request = new ParkUpdateRequest(
                 1L,
                 "新车场名称",
+                null,
                 50L,
                 null,
                 null,
@@ -158,7 +188,7 @@ class ParkServiceTest {
     void update_parkNotFound_throwsServiceException() {
         when(parkRepository.findById(99L)).thenReturn(Optional.empty());
 
-        ParkUpdateRequest request = new ParkUpdateRequest(99L, "新名称", null, null, null, null, null, null);
+        ParkUpdateRequest request = new ParkUpdateRequest(99L, "新名称", null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> parkService.update(request))
                 .isInstanceOf(ServiceException.class)
@@ -169,12 +199,12 @@ class ParkServiceTest {
 
     @Test
     void update_nameCollisionOnOtherPark_throwsServiceException() {
-        Park existing = Park.create(PARK_NAME, 20L, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, null);
+        Park existing = Park.create(PARK_NAME, "CN", 20L, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, null);
         existing.setId(1L);
         when(parkRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(parkRepository.existsByNameAndIdNot("已被占用的名称", 1L)).thenReturn(true);
 
-        ParkUpdateRequest request = new ParkUpdateRequest(1L, "已被占用的名称", null, null, null, null, null, null);
+        ParkUpdateRequest request = new ParkUpdateRequest(1L, "已被占用的名称", null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> parkService.update(request))
                 .isInstanceOf(ServiceException.class)
@@ -185,13 +215,14 @@ class ParkServiceTest {
 
     @Test
     void update_violatingCombinedSchedule_throwsServiceException() {
-        Park existing = Park.create(PARK_NAME, 20L, DATE_BEGIN, LocalDate.of(2026, 9, 30), TIME_OPEN, TIME_CLOSE, null);
+        Park existing = Park.create(PARK_NAME, "CN", 20L, DATE_BEGIN, LocalDate.of(2026, 9, 30), TIME_OPEN, TIME_CLOSE, null);
         existing.setId(1L);
         when(parkRepository.findById(1L)).thenReturn(Optional.of(existing));
 
         // Attempting to move start date to after the existing end date
         ParkUpdateRequest request = new ParkUpdateRequest(
                 1L,
+                null,
                 null,
                 null,
                 LocalDate.of(2026, 10, 15),

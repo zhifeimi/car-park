@@ -86,6 +86,11 @@ export default {
   },
   park: {
     parkName: 'Parking Lot Name',
+    country: 'Country/Region',
+    countryPlaceholder: 'Select country or region',
+    countryRequired: 'Country or region is required',
+    mainlandChina: 'Mainland China',
+    countryTip: 'Visitors get the Chinese province plate keyboard only for a lot in mainland China; every other lot takes the plate as typed.',
     searchParkPlaceholder: 'Enter parking lot name',
     availableDates: 'Available Dates',
     startDate: 'Start Date',

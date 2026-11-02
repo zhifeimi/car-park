@@ -14,6 +14,14 @@ class ParkingDtosTest {
 
     private static final Pattern PLATE = Pattern.compile(ParkingDtos.PLATE_REGEX);
     private static final Pattern PHONE = Pattern.compile(ParkingDtos.PHONE_REGEX);
+    private static final Pattern COUNTRY = Pattern.compile(ParkingDtos.COUNTRY_REGEX);
+
+    @Test
+    void countryIsATwoLetterCode() {
+        assertThat(List.of("CN", "cn", "GB", "Us")).allMatch(c -> COUNTRY.matcher(c).matches());
+        assertThat(List.of("", "C", "CHN", "C1", "中国", "<b>", " CN"))
+                .noneMatch(c -> COUNTRY.matcher(c).matches());
+    }
 
     @Test
     void acceptsPlatesFromAnyCountry() {

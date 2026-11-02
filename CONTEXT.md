@@ -6,7 +6,7 @@ A visitor parking-booking system for community parking lots in the Huangma/Lingt
 
 ## Glossary
 
-- **Park (停车场)**: A physical parking facility with a configured total capacity (`lotNum`), date window (`openDateBegin`, `openDateEnd`), and daily operating hours (`openTime`, `closeTime`). The park `name` is the join key across bookings.
+- **Park (停车场)**: A physical parking facility with a country/region (`country`, ISO 3166-1 alpha-2; `CN` = mainland China, which alone gets the province plate keyboard on the H5), a configured total capacity (`lotNum`), date window (`openDateBegin`, `openDateEnd`), and daily operating hours (`openTime`, `closeTime`). The park `name` is the join key across bookings.
 - **Park Management & Schedule Invariants (停车场管理与运营时段规则)**: The deep domain module governing physical parking lot configuration, capacity definitions, operational scheduling windows, and unified query criteria (`ParkCriteria`). Enforces chronology invariants (`openDateBegin <= openDateEnd`, `openTime < closeTime`), capacity non-negativity (`lotNum >= 0`), and park name uniqueness across creation and partial updates.
 - **Booking (停车预约)**: A reservation by a citizen for a single vehicle on a specific calendar date (`bookingDate`) at a named park.
 - **Booking Lifecycle State Machine (预约生命周期状态机)**:

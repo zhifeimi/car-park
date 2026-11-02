@@ -56,6 +56,7 @@ public interface ParkRepository extends JpaRepository<Park, Long> {
     @Query(value = """
             select cp.id as id,
                    cp.name as name,
+                   cp.country as country,
                    cp.lot_num as lotNum,
                    cp.lot_num - count(cpb.id) as leftLotNum,
                    cp.open_date_begin as openDateBegin,

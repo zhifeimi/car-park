@@ -70,7 +70,7 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
     }
 
     private void createPark(String name, long lotNum, LocalDate begin, LocalDate end) {
-        parkService.create(new ParkCreateRequest(name, lotNum, begin, end, null, null, null));
+        parkService.create(new ParkCreateRequest(name, "CN", lotNum, begin, end, null, null, null));
     }
 
     private BookingCommand cmd(String carPlate, String park, LocalDate date) {
@@ -470,5 +470,6 @@ class BookingIntakeIntegrationTest extends DbIntegrationTest {
         assertThat(data.getTotal()).isEqualTo(1);
         ParkListRow row = (ParkListRow) data.getRows().get(0);
         assertThat(row.getLeftLotNum()).isEqualTo(3L);
+        assertThat(row.getCountry()).isEqualTo("CN");
     }
 }
