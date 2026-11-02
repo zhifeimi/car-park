@@ -1,7 +1,8 @@
 <template>
   <van-popup v-model:show="show" position="bottom" round :close-on-click-overlay="true">
     <div class="keyboard">
-      <div class="kb-row">
+      <!-- Provinces: 31 keys need their own panel. In one row they shrink to ~12px and overlap. -->
+      <div v-if="panel === 'province'" class="kb-grid">
         <button
           v-for="key in PROVINCES"
           :key="key"
@@ -10,41 +11,51 @@
         >
           {{ key }}
         </button>
-      </div>
-      <div class="kb-row">
-        <button
-          v-for="key in LETTERS_ROW_1"
-          :key="key"
-          class="kb-key"
-          @click="onKey(key)"
-        >
-          {{ key }}
-        </button>
-      </div>
-      <div class="kb-row">
-        <button
-          v-for="key in LETTERS_ROW_2"
-          :key="key"
-          class="kb-key"
-          @click="onKey(key)"
-        >
-          {{ key }}
-        </button>
-      </div>
-      <div class="kb-row">
-        <button
-          v-for="key in DIGITS"
-          :key="key"
-          class="kb-key"
-          @click="onKey(key)"
-        >
-          {{ key }}
-        </button>
-        <button class="kb-key kb-key-backspace" @click="emit('backspace')">
+        <button class="kb-key kb-key-backspace" :aria-label="backspaceText" @click="emit('backspace')">
           <van-icon name="delete-o" size="20" />
         </button>
       </div>
+
+      <template v-else>
+        <div class="kb-row">
+          <button
+            v-for="key in LETTERS_ROW_1"
+            :key="key"
+            class="kb-key"
+            @click="onKey(key)"
+          >
+            {{ key }}
+          </button>
+        </div>
+        <div class="kb-row">
+          <button
+            v-for="key in LETTERS_ROW_2"
+            :key="key"
+            class="kb-key"
+            @click="onKey(key)"
+          >
+            {{ key }}
+          </button>
+        </div>
+        <div class="kb-row">
+          <button
+            v-for="key in DIGITS"
+            :key="key"
+            class="kb-key"
+            @click="onKey(key)"
+          >
+            {{ key }}
+          </button>
+          <button class="kb-key kb-key-backspace" :aria-label="backspaceText" @click="emit('backspace')">
+            <van-icon name="delete-o" size="20" />
+          </button>
+        </div>
+      </template>
+
       <div class="kb-row">
+        <button class="kb-key kb-key-switch" @click="togglePanel">
+          {{ panel === 'province' ? lettersText : provincesText }}
+        </button>
         <button class="kb-key kb-key-confirm" @click="show = false">{{ confirmText }}</button>
       </div>
     </div>
@@ -52,16 +63,35 @@
 </template>
 
 <script setup>
-import { PROVINCES, LETTERS_ROW_1, LETTERS_ROW_2, DIGITS } from '@car-park/utils'
+import { ref, watch } from 'vue'
+import { DIGITS, LETTERS_ROW_1, LETTERS_ROW_2, PROVINCES } from '@car-park/utils'
 
 const show = defineModel('show', { type: Boolean, default: false })
 const props = defineProps({
-  confirmText: {
-    type: String,
-    default: 'Done',
-  },
+  /** The plate typed so far. The province panel shows while it is empty, as a plate starts with a province. */
+  plate: { type: String, default: '' },
+  confirmText: { type: String, default: 'Done' },
+  /** Switch-key labels and the backspace key's accessible name */
+  lettersText: { type: String, default: 'ABC' },
+  provincesText: { type: String, default: '省' },
+  backspaceText: { type: String, default: 'Delete' },
 })
 const emit = defineEmits(['input', 'backspace'])
+
+// Follows the plate: empty → provinces, after the first character → letters and digits.
+// The switch key overrides it until the plate next becomes empty or non-empty.
+const panel = ref('province')
+watch(
+  () => props.plate.length === 0,
+  (empty) => {
+    panel.value = empty ? 'province' : 'alnum'
+  },
+  { immediate: true },
+)
+
+function togglePanel() {
+  panel.value = panel.value === 'province' ? 'alnum' : 'province'
+}
 
 function onKey(key) {
   emit('input', key)
@@ -83,10 +113,18 @@ function onKey(key) {
   gap: 4px;
 }
 
+/* 8 columns × 4 rows = 31 provinces + backspace, every key the same width */
+.kb-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px 4px;
+}
+
 .kb-key {
   flex: 1 1 0;
   min-width: 0;
   height: 42px;
+  padding: 0;
   border: none;
   border-radius: 5px;
   background: #fff;
@@ -101,7 +139,7 @@ function onKey(key) {
 }
 
 .kb-key-province {
-  font-size: 14px;
+  font-size: 17px;
 }
 
 .kb-key-backspace {
@@ -111,8 +149,14 @@ function onKey(key) {
   justify-content: center;
 }
 
+.kb-key-switch {
+  height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .kb-key-confirm {
-  flex: 1 1 0;
+  flex: 2.5 1 0;
   height: 44px;
   background: var(--np-brand, #1989fa);
   color: #fff;

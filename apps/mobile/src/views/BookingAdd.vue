@@ -98,7 +98,11 @@
     <plate-keyboard
       v-if="cnPlate"
       v-model:show="showKeyboard"
+      :plate="form.carPlate"
       :confirm-text="t('booking.done')"
+      :letters-text="t('booking.keyboardLetters')"
+      :provinces-text="t('booking.keyboardProvinces')"
+      :backspace-text="t('booking.keyboardBackspace')"
       @input="onPlateKey"
       @backspace="onPlateBackspace"
     />

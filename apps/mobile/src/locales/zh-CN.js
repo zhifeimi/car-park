@@ -23,6 +23,9 @@ export default {
     submit: '提交',
     submitting: '提交中...',
     done: '完成',
+    keyboardLetters: 'ABC',
+    keyboardProvinces: '省份',
+    keyboardBackspace: '删除',
     fetchParkFailed: '获取停车场信息失败，请刷新重试',
     validation: {
       plateRequired: '请输入车牌号',

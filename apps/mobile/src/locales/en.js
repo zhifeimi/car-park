@@ -23,6 +23,9 @@ export default {
     submit: 'Submit',
     submitting: 'Submitting...',
     done: 'Done',
+    keyboardLetters: 'ABC',
+    keyboardProvinces: 'Province',
+    keyboardBackspace: 'Delete',
     fetchParkFailed: 'Failed to fetch parking lot info, please refresh and retry',
     validation: {
       plateRequired: 'Please enter license plate number',
