@@ -118,9 +118,13 @@ class ParkTest {
 
     // ─── Country ──────────────────────────────────────────────────────────────
 
+    private static Park createWithCountry(String country) {
+        return Park.create(VALID_NAME, country, VALID_LOT_NUM, null, null, null, null, null);
+    }
+
     @Test
     void create_countryIsTrimmedAndUpperCased() {
-        Park park = Park.create(VALID_NAME, " de ", VALID_LOT_NUM, null, null, null, null, null);
+        Park park = createWithCountry(" de ");
 
         assertThat(park.getCountry()).isEqualTo("DE");
     }
@@ -129,18 +133,18 @@ class ParkTest {
     void create_regionsWithTheirOwnIsoCode_areAccepted() {
         // CN is mainland China only; HK, MO and TW are separate lots for the H5's plate keyboard
         for (String code : new String[] {"CN", "HK", "MO", "TW", "GB", "US"}) {
-            assertThat(Park.create(VALID_NAME, code, VALID_LOT_NUM, null, null, null, null, null).getCountry())
+            assertThat(createWithCountry(code).getCountry())
                     .isEqualTo(code);
         }
     }
 
     @Test
     void create_missingCountry_throwsServiceException() {
-        assertThatThrownBy(() -> Park.create(VALID_NAME, null, VALID_LOT_NUM, null, null, null, null, null))
+        assertThatThrownBy(() -> createWithCountry(null))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("国家/地区不能为空");
 
-        assertThatThrownBy(() -> Park.create(VALID_NAME, "  ", VALID_LOT_NUM, null, null, null, null, null))
+        assertThatThrownBy(() -> createWithCountry("  "))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("国家/地区不能为空");
     }
@@ -148,7 +152,7 @@ class ParkTest {
     @Test
     void create_unassignedCountryCode_throwsServiceException() {
         for (String code : new String[] {"XX", "ZZ", "CHN", "C", "U1"}) {
-            assertThatThrownBy(() -> Park.create(VALID_NAME, code, VALID_LOT_NUM, null, null, null, null, null))
+            assertThatThrownBy(() -> createWithCountry(code))
                     .as(code)
                     .isInstanceOf(ServiceException.class)
                     .hasMessage("国家/地区代码无效");
@@ -157,7 +161,7 @@ class ParkTest {
 
     @Test
     void applyPartialUpdate_country_changesOnlyWhenGiven() {
-        Park park = Park.create(VALID_NAME, VALID_COUNTRY, VALID_LOT_NUM, null, null, null, null, null);
+        Park park = createWithCountry(VALID_COUNTRY);
 
         park.applyPartialUpdate(null, null, 10L, null, null, null, null, null);
         assertThat(park.getCountry()).isEqualTo("CN");

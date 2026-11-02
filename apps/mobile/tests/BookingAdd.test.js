@@ -1,5 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 import Vant, * as vant from 'vant'
 import BookingAdd from '@/views/BookingAdd.vue'
 import { addBooking, getLeftLotNum, listParks } from '@/api/parking'
@@ -45,9 +46,12 @@ afterEach(() => {
   vi.unstubAllEnvs()
 })
 
-async function mountBooking() {
+async function mountBooking({ realKeyboard = false } = {}) {
+  const keyboardStubs = realKeyboard
+    ? { 'van-popup': { render() { return h('div', this.$slots.default?.()) } } }
+    : { PlateKeyboard: true }
   wrapper = mount(BookingAdd, {
-    global: { plugins: [Vant], stubs: { LangSwitch: true, PlateKeyboard: true } },
+    global: { plugins: [Vant], stubs: { LangSwitch: true, ...keyboardStubs } },
   })
   await flushPromises()
 }
@@ -104,6 +108,27 @@ describe('BookingAdd country-driven plate validation', () => {
 
     expect(addBooking).not.toHaveBeenCalled()
     expect(showFailToast).toHaveBeenCalledWith('Parking lot country/region is not configured; please contact staff')
+  })
+
+  it('submits a CN plate entered through the real keyboard', async () => {
+    await mountBooking({ realKeyboard: true })
+    await choosePark('CN lot')
+    await wrapper.find('.plate-field input').trigger('click')
+
+    for (const key of ['粤', 'A', '1', '2', '3', '4', '5']) {
+      const button = wrapper.findAll('.kb-key').find((node) => node.text() === key)
+      expect(button, `keyboard key ${key}`).toBeDefined()
+      await button.trigger('click')
+      if (key === '粤') expect(wrapper.find('.kb-grid').exists()).toBe(false)
+    }
+    expect(wrapper.find('.plate-field input').element.value).toBe('粤A12345')
+
+    await submit()
+
+    expect(addBooking).toHaveBeenCalledExactlyOnceWith({
+      carPlate: '粤A12345', cellPhone: '13800138000',
+      park: 'CN lot', bookingDate: '2026-11-02',
+    })
   })
 
   it('keeps the plate and removes the keyboard when leaving a CN lot', async () => {
