@@ -23,6 +23,9 @@ export default {
     submit: '提交',
     submitting: '提交中...',
     done: '完成',
+    keyboardLetters: 'ABC',
+    keyboardProvinces: '省份',
+    keyboardBackspace: '删除',
     fetchParkFailed: '获取停车场信息失败，请刷新重试',
     validation: {
       plateRequired: '请输入车牌号',
@@ -32,6 +35,7 @@ export default {
       plateInvalidIntl: '车牌号只能包含车牌上的字母和数字',
       phoneInvalidIntl: '请填写含国家区号的完整号码，如 +86 138 0013 8000',
       parkRequired: '请选择预约位置',
+      parkCountryInvalid: '该停车场未正确配置国家/地区，请联系工作人员',
       dateRequired: '请选择预约日期',
       noticeRequired: '请勾选预约须知',
       noLots: '没有剩余车位，请更换车场或日期',

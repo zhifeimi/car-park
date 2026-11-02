@@ -10,8 +10,8 @@ export interface QrPayload {
 
 /**
  * Mainland China plate: ordinary 7-char and new-energy 8-char forms. Strict
- * client-side check for VITE_REGION=cn deployments; the server accepts the
- * wider PLATE_REGEX.
+ * client-side check when the selected lot's country is CN (independent of
+ * VITE_REGION); the server accepts the wider PLATE_REGEX.
  */
 export const CN_PLATE_REGEX =
   /^([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-HJ-NP-Z](([0-9]{5}[DF])|([DF][A-HJ-NP-Z0-9][0-9]{4})))|([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-HJ-NP-Z][A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9挂学警港澳])$/
@@ -58,6 +58,7 @@ export const LETTERS_ROW_2: readonly string[] = 'MNPQRSTUVWXYZ'.split('')
 export const DIGITS: readonly string[] = '1234567890'.split('')
 
 export * from './booking-lifecycle-display.ts'
+export * from './country.ts'
 export * from './i18n.ts'
 export * from './server-messages.ts'
 

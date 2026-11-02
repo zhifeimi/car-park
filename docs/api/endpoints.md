@@ -17,11 +17,11 @@
 
 | Method | Endpoint | Access | Description | Parameters / Body | Response |
 |---|---|---|---|---|---|
-| `GET` | `/parking/park/list` | **Public** | List all parking lots | `ParkCriteria` `?name=&status=` | `TableData<Park>` |
+| `GET` | `/parking/park/list` | **Public** | List all parking lots (each row carries `country`) | `ParkCriteria` `?name=&status=` | `TableData<Park>` |
 | `GET` | `/parking/park/leftLotNum` | **Public** | Query available capacity | `?park={name}&date={YYYY-MM-DD}` | `R<number \| null>` |
 | `GET` | `/parking/park/{id}` | Staff (JWT) | Get parking lot details | `id` in path | `R<Park>` |
-| `POST` | `/parking/park` | Staff (JWT) | Add new parking lot | `Park` `{name, lotNum, status, ...}` | `R<void>` |
-| `PUT` | `/parking/park` | Staff (JWT) | Update parking lot | `Park` `{id, name, lotNum, status, ...}` | `R<void>` |
+| `POST` | `/parking/park` | Staff (JWT) | Add new parking lot | `Park` `{name, country, lotNum, ...}` — `country` required, ISO 3166-1 alpha-2 | `R<void>` |
+| `PUT` | `/parking/park` | Staff (JWT) | Update parking lot | `Park` `{id, name, country, lotNum, ...}` — omitted fields unchanged | `R<void>` |
 | `DELETE` | `/parking/park/{ids}` | Staff (JWT) | Delete parking lot(s) | `ids` (comma-separated or single) | `R<void>` |
 
 ---

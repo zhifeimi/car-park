@@ -46,6 +46,8 @@ export const SERVER_MESSAGES_EN: Record<string, string> = {
   '停车场名称不能为空': 'Parking lot name is required',
   '停车场名称不能超过100个字符': 'Parking lot name can be at most 100 characters',
   '停车场名称已存在': 'A parking lot with that name already exists',
+  '国家/地区不能为空': 'Choose the country or region of the parking lot',
+  '国家/地区代码无效': 'That is not a known country or region',
   '停车场id不能为空': 'Parking lot ID is required',
   '可预约车位总数不能为空': 'Number of bookable spaces is required',
   '可预约车位总数不能为负数': 'Number of bookable spaces cannot be negative',

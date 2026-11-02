@@ -10,6 +10,19 @@ jobs:
   backend-test:
     name: Backend Test (Java 25)
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:9.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: carpark_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,6 +38,18 @@ jobs:
         working-directory: apps/backend
         run: ./mvnw test
 
+      - name: Run native park projection test (MySQL)
+        working-directory: apps/backend
+        run: |
+          mkdir -p ../../secrets
+          printf '%s\n' \
+            'DB_URL=jdbc:mysql://127.0.0.1:3306/carpark_test?useSSL=false&characterEncoding=utf8&serverTimezone=UTC' \
+            'DB_USERNAME=root' \
+            'DB_PASSWORD=' \
+            > ../../secrets/carpark-test.env
+          TEST_JWT_SECRET="$(openssl rand -hex 32)" \
+            ./mvnw test -Dsurefire.excludedGroups= -Dtest='BookingIntakeIntegrationTest#parkList_computesTodaysLeftLotNum'
+
   frontend-lint-build:
     name: Frontend Lint & Build (Deno)
     runs-on: ubuntu-latest
@@ -38,7 +63,19 @@ jobs:
           deno-version: v2.x
 
       - name: Run Deno lint
-        run: deno lint
+        run: deno lint apps packages
+
+      - name: Run Utils Tests
+        working-directory: packages/utils
+        run: deno task test
+
+      - name: Run Web Admin Tests
+        working-directory: apps/web
+        run: deno task test
+
+      - name: Run Mobile H5 Tests
+        working-directory: apps/mobile
+        run: deno task test
 
       - name: Build Web Admin
         working-directory: apps/web

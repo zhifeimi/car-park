@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Seed a fresh dev MySQL with db/schema.sql + db/data.sql (both idempotent).
+# Seed a fresh dev MySQL with db/schema.sql + db/data.sql (both idempotent), applying
+# scripts/ops/park-country-migration.sql in between so an older dev DB gains cp_park.country.
 # DEV ONLY — never point this at the production database (see CLAUDE.md).
 # Usage:
 #   ./scripts/db-tunnel.sh     # in another terminal
@@ -27,7 +28,8 @@ fi
 export SEED_DB_HOST SEED_DB_PORT SEED_DB_SSL_CA SEED_DB_PASSWORD
 
 # No local mysql client; PyMySQL via uv. utf8mb4 is explicit so CJK isn't double-encoded.
-uv run -q --with pymysql python3 -I - "$DB_DIR/schema.sql" "$DB_DIR/data.sql" <<'PY'
+uv run -q --with pymysql python3 -I - "$DB_DIR/schema.sql" \
+  "$ROOT_DIR/scripts/ops/park-country-migration.sql" "$DB_DIR/data.sql" <<'PY'
 import os, sys, pymysql
 from pymysql.constants import CLIENT
 ca = os.environ["SEED_DB_SSL_CA"]
@@ -45,7 +47,7 @@ with c.cursor() as cur:
         while cur.nextset():
             pass
         print("loaded", os.path.basename(path))
-    cur.execute("SELECT name, CHAR_LENGTH(name) FROM cp_park")
+    cur.execute("SELECT name, CHAR_LENGTH(name), country FROM cp_park")
     print("cp_park:", cur.fetchall())
     cur.execute("SELECT username FROM cp_user")
     print("cp_user:", cur.fetchall())

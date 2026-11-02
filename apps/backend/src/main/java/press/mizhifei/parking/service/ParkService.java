@@ -96,6 +96,7 @@ public class ParkService {
 
         Park park = Park.create(
                 request.name(),
+                request.country(),
                 request.lotNum(),
                 request.openDateBegin(),
                 request.openDateEnd(),
@@ -124,6 +125,7 @@ public class ParkService {
 
         park.applyPartialUpdate(
                 request.name(),
+                request.country(),
                 request.lotNum(),
                 request.openDateBegin(),
                 request.openDateEnd(),

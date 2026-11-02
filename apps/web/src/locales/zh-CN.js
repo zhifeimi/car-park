@@ -86,6 +86,11 @@ export default {
   },
   park: {
     parkName: '停车场名称',
+    country: '国家/地区',
+    countryPlaceholder: '请选择国家/地区',
+    countryRequired: '国家/地区不能为空',
+    mainlandChina: '中国大陆',
+    countryTip: '仅中国大陆的停车场向访客显示省份车牌键盘，其他停车场按原样输入车牌。',
     searchParkPlaceholder: '请输入停车场名称',
     availableDates: '可预约日期',
     startDate: '开始日期',

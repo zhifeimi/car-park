@@ -26,9 +26,9 @@ public final class ParkingDtos {
      * Any country's number plate, so one build serves parks worldwide: letters of any
      * script (with combining marks) and digits, single inner spaces / hyphens / middle
      * dots, 2-16 characters. Mainland plates (粤A12345, 粤AD12345) are a subset; the
-     * H5's {@code VITE_REGION=cn} mode still enforces the strict mainland format
-     * client-side. The character class is also this field's XSS guard (ADR-005).
-     * Mirrors {@code PLATE_REGEX} in packages/utils.
+     * H5 enforces the strict mainland format client-side when the selected lot's country
+     * is {@code CN}; {@code VITE_REGION} controls phone validation only. The character
+     * class is also this field's XSS guard (ADR-005). Mirrors {@code PLATE_REGEX} in packages/utils.
      */
     public static final String PLATE_REGEX =
             "^[\\p{L}\\p{N}](?:[\\p{L}\\p{M}\\p{N}]|[ \\-·](?=[\\p{L}\\p{N}])){1,15}$";
@@ -36,8 +36,13 @@ public final class ParkingDtos {
     /** Mainland mobile (13800138000, the deployed H5's format) or E.164 (+447700900123). */
     public static final String PHONE_REGEX = "^(?:1[3-9]\\d{9}|\\+[1-9]\\d{6,14})$";
 
+    /** ISO 3166-1 alpha-2 country/region code; {@code Park} checks it is an assigned one. */
+    public static final String COUNTRY_REGEX = "^[A-Za-z]{2}$";
+
     public record ParkCreateRequest(
             @NotBlank(message = "停车场名称不能为空") @Size(max = 100, message = "停车场名称不能超过100个字符") String name,
+            @NotBlank(message = "国家/地区不能为空")
+            @Pattern(regexp = COUNTRY_REGEX, message = "国家/地区代码无效") String country,
             @NotNull(message = "可预约车位总数不能为空") @Min(value = 0, message = "可预约车位总数不能为负数") Long lotNum,
             @JsonFormat(pattern = "yyyy-MM-dd") LocalDate openDateBegin,
             @JsonFormat(pattern = "yyyy-MM-dd") LocalDate openDateEnd,
@@ -49,6 +54,7 @@ public final class ParkingDtos {
     public record ParkUpdateRequest(
             @NotNull(message = "停车场id不能为空") Long id,
             @Size(max = 100, message = "停车场名称不能超过100个字符") String name,
+            @Pattern(regexp = COUNTRY_REGEX, message = "国家/地区代码无效") String country,
             @Min(value = 0, message = "可预约车位总数不能为负数") Long lotNum,
             @JsonFormat(pattern = "yyyy-MM-dd") LocalDate openDateBegin,
             @JsonFormat(pattern = "yyyy-MM-dd") LocalDate openDateEnd,

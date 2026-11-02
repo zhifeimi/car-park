@@ -25,6 +25,9 @@
 
       <el-table v-loading="loading" :data="parkList">
         <el-table-column :label="t('park.parkName')" prop="name" min-width="140" />
+        <el-table-column :label="t('park.country')" min-width="130">
+          <template #default="{ row }">{{ countryLabel(row.country) }}</template>
+        </el-table-column>
         <el-table-column :label="t('park.totalLots')" prop="lotNum" width="120" />
         <el-table-column :label="t('park.todayRemaining')" width="140">
           <template #default="{ row }">
@@ -54,6 +57,13 @@
           <el-input v-model="form.name" :placeholder="t('park.searchParkPlaceholder')" />
           <div class="form-tip">{{ t('park.nameTip') }}</div>
         </el-form-item>
+        <el-form-item :label="t('park.country')" prop="country">
+          <el-select v-model="form.country" filterable :placeholder="t('park.countryPlaceholder')">
+            <el-option v-for="option in countryOptions" :key="option.value" :label="option.label"
+              :value="option.value" />
+          </el-select>
+          <div class="form-hint">{{ t('park.countryTip') }}</div>
+        </el-form-item>
         <el-form-item :label="t('park.totalLots')" prop="lotNum">
           <el-input-number v-model="form.lotNum" :min="0" :step="1" />
         </el-form-item>
@@ -82,9 +92,27 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Pagination from '@/components/Pagination.vue'
 import { addPark, deletePark, exportParks, listPark, updatePark } from '@/api/parking'
+import { COUNTRY_CODES, countryName, MAINLAND_CHINA } from '@car-park/utils'
 import { useI18n } from '@/locales'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+
+// "Mainland China", not the runtime's "China": CN is what turns on the H5's
+// province plate keyboard, and HK / MO / TW are separate entries.
+function countryLabel(code) {
+  if (!code) return '—'
+  const name = code === MAINLAND_CHINA ? t('park.mainlandChina') : countryName(code, locale.value)
+  return `${name} (${code})`
+}
+
+// Mainland China first (the deployed lots), then by name in the UI language.
+// The label carries the code, so typing "GB" filters as well as "United".
+const countryOptions = computed(() => {
+  const others = COUNTRY_CODES.filter((code) => code !== MAINLAND_CHINA)
+    .map((code) => ({ value: code, label: countryLabel(code) }))
+    .sort((a, b) => a.label.localeCompare(b.label, locale.value))
+  return [{ value: MAINLAND_CHINA, label: countryLabel(MAINLAND_CHINA) }, ...others]
+})
 
 const loading = ref(false)
 const parkList = ref([])
@@ -124,6 +152,7 @@ const formRef = ref(null)
 const form = reactive({
   id: undefined,
   name: '',
+  country: '',
   lotNum: 0,
   dateSpan: [],
   timeSpan: [],
@@ -132,6 +161,7 @@ const form = reactive({
 
 const rules = computed(() => ({
   name: [{ required: true, message: t('park.nameRequired'), trigger: 'blur' }],
+  country: [{ required: true, message: t('park.countryRequired'), trigger: 'change' }],
   lotNum: [{ required: true, message: t('park.lotsRequired'), trigger: 'change' }],
 }))
 
@@ -139,6 +169,8 @@ function openForm(row) {
   if (row) {
     form.id = row.id
     form.name = row.name
+    // a lot from before the column was added may have none: the admin must pick one
+    form.country = row.country || ''
     form.lotNum = row.lotNum ?? 0
     form.dateSpan = row.openDateBegin && row.openDateEnd ? [row.openDateBegin, row.openDateEnd] : []
     form.timeSpan = row.openTime && row.closeTime ? [row.openTime, row.closeTime] : []
@@ -146,6 +178,8 @@ function openForm(row) {
   } else {
     form.id = undefined
     form.name = ''
+    // no default: a lot is only mainland China (province keyboard) when someone says so
+    form.country = ''
     form.lotNum = 0
     form.dateSpan = []
     form.timeSpan = []
@@ -158,6 +192,7 @@ async function submitForm() {
   await formRef.value.validate()
   const payload = {
     name: form.name,
+    country: form.country,
     lotNum: form.lotNum,
     openDateBegin: form.dateSpan?.[0] ?? null,
     openDateEnd: form.dateSpan?.[1] ?? null,
@@ -232,6 +267,13 @@ onMounted(getList)
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: var(--cp-text-secondary);
+  line-height: 1.5;
+  margin-top: 4px;
 }
 
 .form-tip {

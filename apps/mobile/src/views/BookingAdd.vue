@@ -10,8 +10,36 @@
 
     <div class="form">
       <section class="card">
+        <van-cell :title="t('booking.parkLocation')" required :border="false" />
+        <van-radio-group v-model="form.park" class="park-radios">
+          <van-radio v-for="park in parkList" :key="park.id" :name="park.name">
+            {{ park.name }}
+          </van-radio>
+        </van-radio-group>
         <van-field
-          v-if="intl"
+          v-model="form.bookingDate"
+          :label="t('booking.bookingDate')"
+          :placeholder="t('booking.selectDatePlaceholder')"
+          readonly
+          required
+          is-link
+          @click="showCalendar = true"
+        />
+        <div class="availability" aria-live="polite">
+          <div>
+            <div class="availability-label">{{ t('booking.leftLots') }}</div>
+            <div class="availability-total">{{ t('booking.totalLots') }} {{ displayLotNum || '—' }}</div>
+          </div>
+          <strong :class="['availability-count', { full: displayLeftLotNum === '0' }]">
+            {{ displayLeftLotNum || '—' }}
+          </strong>
+        </div>
+      </section>
+
+      <!-- below the lot picker: how the plate is entered depends on the lot's country -->
+      <section class="card">
+        <van-field
+          v-if="!cnPlate"
           v-model="form.carPlate"
           class="plate-field"
           :label="t('booking.carPlate')"
@@ -45,33 +73,6 @@
         />
       </section>
 
-      <section class="card">
-        <van-cell :title="t('booking.parkLocation')" required :border="false" />
-        <van-radio-group v-model="form.park" class="park-radios">
-          <van-radio v-for="park in parkList" :key="park.id" :name="park.name">
-            {{ park.name }}
-          </van-radio>
-        </van-radio-group>
-        <van-field
-          v-model="form.bookingDate"
-          :label="t('booking.bookingDate')"
-          :placeholder="t('booking.selectDatePlaceholder')"
-          readonly
-          required
-          is-link
-          @click="showCalendar = true"
-        />
-        <div class="availability" aria-live="polite">
-          <div>
-            <div class="availability-label">{{ t('booking.leftLots') }}</div>
-            <div class="availability-total">{{ t('booking.totalLots') }} {{ displayLotNum || '—' }}</div>
-          </div>
-          <strong :class="['availability-count', { full: displayLeftLotNum === '0' }]">
-            {{ displayLeftLotNum || '—' }}
-          </strong>
-        </div>
-      </section>
-
       <section class="card notice-card">
         <van-checkbox v-model="form.notice" shape="round">
           {{ t('booking.agreeNotice') }}
@@ -95,9 +96,13 @@
     />
 
     <plate-keyboard
-      v-if="!intl"
+      v-if="cnPlate"
       v-model:show="showKeyboard"
+      :plate="form.carPlate"
       :confirm-text="t('booking.done')"
+      :letters-text="t('booking.keyboardLetters')"
+      :provinces-text="t('booking.keyboardProvinces')"
+      :backspace-text="t('booking.keyboardBackspace')"
       @input="onPlateKey"
       @backspace="onPlateBackspace"
     />
@@ -113,8 +118,10 @@ import { addBooking, getLeftLotNum, listParks } from '@/api/parking'
 import {
   CN_MOBILE_REGEX,
   CN_PLATE_REGEX,
+  COUNTRY_CODES,
   E164_REGEX,
   formatDateTime,
+  isMainlandChina,
   normalizePhone,
   normalizePlate,
   PHONE_STORAGE_KEY,
@@ -127,9 +134,8 @@ import LangSwitch from '@/components/LangSwitch.vue'
 const router = useRouter()
 const { t, siteName } = useI18n()
 
-// Deployment region (packages/ui/DESIGN.md). 'cn' (default, the deployed H5):
-// province plate keyboard + strict mainland formats. 'intl': free-text plate
-// in any script + phone with country code.
+// Deployment region (packages/ui/DESIGN.md) — phone format only. 'cn' (default,
+// the deployed H5): 11-digit mainland mobile. 'intl': number with country code.
 const intl = import.meta.env.VITE_REGION === 'intl'
 
 const MAX_PLATE_LENGTH = 8 // new-energy plates are 8 chars; ordinary plates 7
@@ -148,6 +154,11 @@ const form = reactive({
   bookingDate: today.value,
   notice: false,
 })
+// Plate entry follows the chosen lot's country (Park.country): the province
+// keyboard + strict mainland format only for a mainland-China lot; free text
+// for every other valid lot, and before a lot is picked.
+const chosenPark = computed(() => parkList.value.find((p) => p.name === form.park))
+const cnPlate = computed(() => isMainlandChina(chosenPark.value?.country))
 const showKeyboard = ref(false)
 const showCalendar = ref(false)
 const submitting = ref(false)
@@ -182,6 +193,11 @@ onMounted(async () => {
   } catch {
     showFailToast(t('booking.fetchParkFailed'))
   }
+})
+
+// leaving a mainland lot for another: the keyboard goes, the plate stays
+watch(cnPlate, (cn) => {
+  if (!cn) showKeyboard.value = false
 })
 
 watch(
@@ -241,8 +257,11 @@ function onDateConfirm(date) {
 
 function validate() {
   if (!form.carPlate) return t('booking.validation.plateRequired')
-  if (intl ? !PLATE_REGEX.test(form.carPlate) : !CN_PLATE_REGEX.test(form.carPlate)) {
-    return t(intl ? 'booking.validation.plateInvalidIntl' : 'booking.validation.plateInvalid')
+  if (form.park && !COUNTRY_CODES.includes(chosenPark.value?.country?.trim().toUpperCase())) {
+    return t('booking.validation.parkCountryInvalid')
+  }
+  if (cnPlate.value ? !CN_PLATE_REGEX.test(form.carPlate) : !PLATE_REGEX.test(form.carPlate)) {
+    return t(cnPlate.value ? 'booking.validation.plateInvalid' : 'booking.validation.plateInvalidIntl')
   }
   if (!form.cellPhone) return t('booking.validation.phoneRequired')
   if (intl ? !E164_REGEX.test(form.cellPhone) : !CN_MOBILE_REGEX.test(form.cellPhone)) {

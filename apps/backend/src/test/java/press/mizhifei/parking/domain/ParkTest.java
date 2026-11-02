@@ -3,8 +3,13 @@ package press.mizhifei.parking.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Locale;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import press.mizhifei.parking.common.ServiceException;
 
@@ -15,6 +20,7 @@ import press.mizhifei.parking.common.ServiceException;
 class ParkTest {
 
     private static final String VALID_NAME = "黄麻社区东停车场";
+    private static final String VALID_COUNTRY = "CN";
     private static final Long VALID_LOT_NUM = 50L;
     private static final LocalDate DATE_BEGIN = LocalDate.of(2026, 9, 1);
     private static final LocalDate DATE_END = LocalDate.of(2026, 12, 31);
@@ -25,6 +31,7 @@ class ParkTest {
     void create_validParameters_createsParkSuccessfully() {
         Park park = Park.create(
                 VALID_NAME,
+                VALID_COUNTRY,
                 VALID_LOT_NUM,
                 DATE_BEGIN,
                 DATE_END,
@@ -34,6 +41,7 @@ class ParkTest {
         );
 
         assertThat(park.getName()).isEqualTo(VALID_NAME);
+        assertThat(park.getCountry()).isEqualTo("CN");
         assertThat(park.getLotNum()).isEqualTo(VALID_LOT_NUM);
         assertThat(park.getOpenDateBegin()).isEqualTo(DATE_BEGIN);
         assertThat(park.getOpenDateEnd()).isEqualTo(DATE_END);
@@ -44,7 +52,7 @@ class ParkTest {
 
     @Test
     void create_nullDatesAndTimes_createsParkSuccessfully() {
-        Park park = Park.create(VALID_NAME, VALID_LOT_NUM, null, null, null, null, null);
+        Park park = Park.create(VALID_NAME, VALID_COUNTRY, VALID_LOT_NUM, null, null, null, null, null);
 
         assertThat(park.getName()).isEqualTo(VALID_NAME);
         assertThat(park.getOpenDateBegin()).isNull();
@@ -55,7 +63,7 @@ class ParkTest {
 
     @Test
     void create_singleDayOpening_permitsEqualDates() {
-        Park park = Park.create(VALID_NAME, VALID_LOT_NUM, DATE_BEGIN, DATE_BEGIN, TIME_OPEN, TIME_CLOSE, null);
+        Park park = Park.create(VALID_NAME, VALID_COUNTRY, VALID_LOT_NUM, DATE_BEGIN, DATE_BEGIN, TIME_OPEN, TIME_CLOSE, null);
 
         assertThat(park.getOpenDateBegin()).isEqualTo(DATE_BEGIN);
         assertThat(park.getOpenDateEnd()).isEqualTo(DATE_BEGIN);
@@ -63,18 +71,18 @@ class ParkTest {
 
     @Test
     void create_blankOrNullName_throwsServiceException() {
-        assertThatThrownBy(() -> Park.create(null, VALID_LOT_NUM, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, null))
+        assertThatThrownBy(() -> Park.create(null, VALID_COUNTRY, VALID_LOT_NUM, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, null))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("停车场名称不能为空");
 
-        assertThatThrownBy(() -> Park.create("   ", VALID_LOT_NUM, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, null))
+        assertThatThrownBy(() -> Park.create("   ", VALID_COUNTRY, VALID_LOT_NUM, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, null))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("停车场名称不能为空");
     }
 
     @Test
     void create_negativeLotNum_throwsServiceException() {
-        assertThatThrownBy(() -> Park.create(VALID_NAME, -1L, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, null))
+        assertThatThrownBy(() -> Park.create(VALID_NAME, VALID_COUNTRY, -1L, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, null))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("可预约车位总数不能为负数");
     }
@@ -84,7 +92,7 @@ class ParkTest {
         LocalDate laterBegin = LocalDate.of(2026, 10, 1);
         LocalDate earlierEnd = LocalDate.of(2026, 9, 1);
 
-        assertThatThrownBy(() -> Park.create(VALID_NAME, VALID_LOT_NUM, laterBegin, earlierEnd, TIME_OPEN, TIME_CLOSE, null))
+        assertThatThrownBy(() -> Park.create(VALID_NAME, VALID_COUNTRY, VALID_LOT_NUM, laterBegin, earlierEnd, TIME_OPEN, TIME_CLOSE, null))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("可预约起始日期不能晚于结束日期");
     }
@@ -94,7 +102,7 @@ class ParkTest {
         LocalTime laterOpen = LocalTime.of(23, 0, 0);
         LocalTime earlierClose = LocalTime.of(8, 0, 0);
 
-        assertThatThrownBy(() -> Park.create(VALID_NAME, VALID_LOT_NUM, DATE_BEGIN, DATE_END, laterOpen, earlierClose, null))
+        assertThatThrownBy(() -> Park.create(VALID_NAME, VALID_COUNTRY, VALID_LOT_NUM, DATE_BEGIN, DATE_END, laterOpen, earlierClose, null))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("每天开放时间必须早于关闭时间");
     }
@@ -103,18 +111,103 @@ class ParkTest {
     void create_equalOpenAndCloseTime_throwsServiceException() {
         LocalTime sameTime = LocalTime.of(8, 0, 0);
 
-        assertThatThrownBy(() -> Park.create(VALID_NAME, VALID_LOT_NUM, DATE_BEGIN, DATE_END, sameTime, sameTime, null))
+        assertThatThrownBy(() -> Park.create(VALID_NAME, VALID_COUNTRY, VALID_LOT_NUM, DATE_BEGIN, DATE_END, sameTime, sameTime, null))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("每天开放时间必须早于关闭时间");
+    }
+
+    // ─── Country ──────────────────────────────────────────────────────────────
+
+    private static Park createWithCountry(String country) {
+        return Park.create(VALID_NAME, country, VALID_LOT_NUM, null, null, null, null, null);
+    }
+
+    @Test
+    void create_countryIsTrimmedAndUpperCased() {
+        Park park = createWithCountry(" de ");
+
+        assertThat(park.getCountry()).isEqualTo("DE");
+    }
+
+    @Test
+    void create_regionsWithTheirOwnIsoCode_areAccepted() {
+        // CN is mainland China only; HK, MO and TW are separate lots for the H5's plate keyboard
+        for (String code : new String[] {"CN", "HK", "MO", "TW", "GB", "US"}) {
+            assertThat(createWithCountry(code).getCountry())
+                    .isEqualTo(code);
+        }
+    }
+
+    @Test
+    void create_missingCountry_throwsServiceException() {
+        assertThatThrownBy(() -> createWithCountry(null))
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("国家/地区不能为空");
+
+        assertThatThrownBy(() -> createWithCountry("  "))
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("国家/地区不能为空");
+    }
+
+    @Test
+    void create_unassignedCountryCode_throwsServiceException() {
+        for (String code : new String[] {"XX", "ZZ", "CHN", "C", "U1"}) {
+            assertThatThrownBy(() -> createWithCountry(code))
+                    .as(code)
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessage("国家/地区代码无效");
+        }
+    }
+
+    @Test
+    void applyPartialUpdate_country_changesOnlyWhenGiven() {
+        Park park = createWithCountry(VALID_COUNTRY);
+
+        park.applyPartialUpdate(null, null, 10L, null, null, null, null, null);
+        assertThat(park.getCountry()).isEqualTo("CN");
+
+        park.applyPartialUpdate(null, "jp", null, null, null, null, null, null);
+        assertThat(park.getCountry()).isEqualTo("JP");
+
+        assertThatThrownBy(() -> park.applyPartialUpdate(null, "XX", null, null, null, null, null, null))
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("国家/地区代码无效");
+    }
+
+    @Test
+    void applyPartialUpdate_legacyRowWithoutCountry_mustBeGivenOne() {
+        // a row that predates cp_park.country and missed the backfill
+        Park legacy = new Park();
+        legacy.setName(VALID_NAME);
+
+        assertThatThrownBy(() -> legacy.applyPartialUpdate(null, null, 10L, null, null, null, null, null))
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("国家/地区不能为空");
+
+        legacy.applyPartialUpdate(null, "CN", 10L, null, null, null, null, null);
+        assertThat(legacy.getCountry()).isEqualTo("CN");
+    }
+
+    @Test
+    void adminCountryPicker_offersExactlyTheCodesParkAccepts() throws IOException {
+        // packages/utils COUNTRY_CODES feeds the admin console's picker; Park validates
+        // against the JDK list. A code only one side knows is unpickable or always rejected.
+        Path source = Path.of("../../packages/utils/src/country.ts");
+        String ts = Files.readString(source);
+        int open = ts.indexOf("= [", ts.indexOf("export const COUNTRY_CODES"));
+        String list = ts.substring(open, ts.indexOf("]", open));
+        var codes = Pattern.compile("'([A-Z]{2})'").matcher(list).results().map(m -> m.group(1)).toList();
+
+        assertThat(codes).containsExactly(Locale.getISOCountries());
     }
 
     // ─── Partial Update Invariant Tests ───────────────────────────────────────
 
     @Test
     void applyPartialUpdate_validSubsetOfFields_updatesOnlyProvidedFields() {
-        Park park = Park.create(VALID_NAME, VALID_LOT_NUM, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, "原备注");
+        Park park = Park.create(VALID_NAME, VALID_COUNTRY, VALID_LOT_NUM, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, "原备注");
 
-        park.applyPartialUpdate("新车场名称", 100L, null, null, null, null, "新备注");
+        park.applyPartialUpdate("新车场名称", null, 100L, null, null, null, null, "新备注");
 
         assertThat(park.getName()).isEqualTo("新车场名称");
         assertThat(park.getLotNum()).isEqualTo(100L);
@@ -127,29 +220,29 @@ class ParkTest {
 
     @Test
     void applyPartialUpdate_newBeginDateExceedsExistingEndDate_throwsServiceException() {
-        Park park = Park.create(VALID_NAME, VALID_LOT_NUM, DATE_BEGIN, LocalDate.of(2026, 9, 30), TIME_OPEN, TIME_CLOSE, null);
+        Park park = Park.create(VALID_NAME, VALID_COUNTRY, VALID_LOT_NUM, DATE_BEGIN, LocalDate.of(2026, 9, 30), TIME_OPEN, TIME_CLOSE, null);
 
         LocalDate invalidNewBegin = LocalDate.of(2026, 10, 15);
-        assertThatThrownBy(() -> park.applyPartialUpdate(null, null, invalidNewBegin, null, null, null, null))
+        assertThatThrownBy(() -> park.applyPartialUpdate(null, null, null, invalidNewBegin, null, null, null, null))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("可预约起始日期不能晚于结束日期");
     }
 
     @Test
     void applyPartialUpdate_newCloseTimePrecedesExistingOpenTime_throwsServiceException() {
-        Park park = Park.create(VALID_NAME, VALID_LOT_NUM, DATE_BEGIN, DATE_END, LocalTime.of(9, 0, 0), LocalTime.of(18, 0, 0), null);
+        Park park = Park.create(VALID_NAME, VALID_COUNTRY, VALID_LOT_NUM, DATE_BEGIN, DATE_END, LocalTime.of(9, 0, 0), LocalTime.of(18, 0, 0), null);
 
         LocalTime invalidNewClose = LocalTime.of(8, 0, 0);
-        assertThatThrownBy(() -> park.applyPartialUpdate(null, null, null, null, null, invalidNewClose, null))
+        assertThatThrownBy(() -> park.applyPartialUpdate(null, null, null, null, null, null, invalidNewClose, null))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("每天开放时间必须早于关闭时间");
     }
 
     @Test
     void applyPartialUpdate_blankName_throwsServiceException() {
-        Park park = Park.create(VALID_NAME, VALID_LOT_NUM, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, null);
+        Park park = Park.create(VALID_NAME, VALID_COUNTRY, VALID_LOT_NUM, DATE_BEGIN, DATE_END, TIME_OPEN, TIME_CLOSE, null);
 
-        assertThatThrownBy(() -> park.applyPartialUpdate("   ", null, null, null, null, null, null))
+        assertThatThrownBy(() -> park.applyPartialUpdate("   ", null, null, null, null, null, null, null))
                 .isInstanceOf(ServiceException.class)
                 .hasMessage("停车场名称不能为空");
     }

@@ -29,6 +29,7 @@ class ExportServiceTest {
         ParkListRow row1 = new TestParkListRow(
                 1L,
                 "黄麻停车场",
+                "CN",
                 100L,
                 42L,
                 LocalDate.of(2026, 8, 1),
@@ -40,6 +41,7 @@ class ExportServiceTest {
         ParkListRow row2 = new TestParkListRow(
                 2L,
                 "岭头停车场",
+                null,
                 50L,
                 0L,
                 null,
@@ -63,32 +65,35 @@ class ExportServiceTest {
             Row header = sheet.getRow(0);
             assertThat(header).isNotNull();
             assertThat(header.getCell(0).getStringCellValue()).isEqualTo("停车场名称");
-            assertThat(header.getCell(1).getStringCellValue()).isEqualTo("可预约车位总数");
-            assertThat(header.getCell(2).getStringCellValue()).isEqualTo("剩余车位");
-            assertThat(header.getCell(3).getStringCellValue()).isEqualTo("可预约起始日期");
-            assertThat(header.getCell(4).getStringCellValue()).isEqualTo("可预约结束日期");
-            assertThat(header.getCell(5).getStringCellValue()).isEqualTo("每天开放时间");
-            assertThat(header.getCell(6).getStringCellValue()).isEqualTo("每天关闭时间");
+            assertThat(header.getCell(1).getStringCellValue()).isEqualTo("国家/地区");
+            assertThat(header.getCell(2).getStringCellValue()).isEqualTo("可预约车位总数");
+            assertThat(header.getCell(3).getStringCellValue()).isEqualTo("剩余车位");
+            assertThat(header.getCell(4).getStringCellValue()).isEqualTo("可预约起始日期");
+            assertThat(header.getCell(5).getStringCellValue()).isEqualTo("可预约结束日期");
+            assertThat(header.getCell(6).getStringCellValue()).isEqualTo("每天开放时间");
+            assertThat(header.getCell(7).getStringCellValue()).isEqualTo("每天关闭时间");
 
             // 2. Verify Data Row 1
             Row r1 = sheet.getRow(1);
             assertThat(r1.getCell(0).getStringCellValue()).isEqualTo("黄麻停车场");
-            assertThat(r1.getCell(1).getNumericCellValue()).isEqualTo(100.0);
-            assertThat(r1.getCell(2).getNumericCellValue()).isEqualTo(42.0);
-            assertThat(r1.getCell(3).getStringCellValue()).isEqualTo("2026-08-01");
-            assertThat(r1.getCell(4).getStringCellValue()).isEqualTo("2026-12-31");
-            assertThat(r1.getCell(5).getStringCellValue()).isEqualTo("08:00:00");
-            assertThat(r1.getCell(6).getStringCellValue()).isEqualTo("22:00:00");
+            assertThat(r1.getCell(1).getStringCellValue()).isEqualTo("CN");
+            assertThat(r1.getCell(2).getNumericCellValue()).isEqualTo(100.0);
+            assertThat(r1.getCell(3).getNumericCellValue()).isEqualTo(42.0);
+            assertThat(r1.getCell(4).getStringCellValue()).isEqualTo("2026-08-01");
+            assertThat(r1.getCell(5).getStringCellValue()).isEqualTo("2026-12-31");
+            assertThat(r1.getCell(6).getStringCellValue()).isEqualTo("08:00:00");
+            assertThat(r1.getCell(7).getStringCellValue()).isEqualTo("22:00:00");
 
             // 3. Verify Data Row 2 (Nulls handled as empty strings)
             Row r2 = sheet.getRow(2);
             assertThat(r2.getCell(0).getStringCellValue()).isEqualTo("岭头停车场");
-            assertThat(r2.getCell(1).getNumericCellValue()).isEqualTo(50.0);
-            assertThat(r2.getCell(2).getNumericCellValue()).isEqualTo(0.0);
-            assertThat(r2.getCell(3).getStringCellValue()).isEmpty();
+            assertThat(r2.getCell(1).getStringCellValue()).isEmpty();
+            assertThat(r2.getCell(2).getNumericCellValue()).isEqualTo(50.0);
+            assertThat(r2.getCell(3).getNumericCellValue()).isEqualTo(0.0);
             assertThat(r2.getCell(4).getStringCellValue()).isEmpty();
             assertThat(r2.getCell(5).getStringCellValue()).isEmpty();
             assertThat(r2.getCell(6).getStringCellValue()).isEmpty();
+            assertThat(r2.getCell(7).getStringCellValue()).isEmpty();
         }
     }
 
@@ -164,6 +169,7 @@ class ExportServiceTest {
     private record TestParkListRow(
             Long id,
             String name,
+            String country,
             Long lotNum,
             Long leftLotNum,
             LocalDate openDateBegin,
@@ -173,6 +179,7 @@ class ExportServiceTest {
     ) implements ParkListRow {
         @Override public Long getId() { return id; }
         @Override public String getName() { return name; }
+        @Override public String getCountry() { return country; }
         @Override public Long getLotNum() { return lotNum; }
         @Override public Long getLeftLotNum() { return leftLotNum; }
         @Override public LocalDate getOpenDateBegin() { return openDateBegin; }

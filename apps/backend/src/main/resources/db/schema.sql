@@ -2,12 +2,14 @@
 -- (the old repo never contained cp_* DDL).
 --
 -- IMPORTANT: on the PRODUCTION database cp_park / cp_parking_booking already
--- exist with live data — run ONLY the cp_user DDL there (see README runbook).
+-- exist with live data — run ONLY the cp_user DDL there (see README runbook),
+-- plus scripts/ops/park-country-migration.sql for the cp_park.country column.
 -- This full file is for the fresh dev docker volume.
 
 CREATE TABLE IF NOT EXISTS cp_park (
     id              BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
     name            VARCHAR(100) NOT NULL                COMMENT '停车场名称',
+    country         CHAR(2)      DEFAULT NULL            COMMENT '国家/地区 ISO 3166-1 alpha-2 (CN=中国大陆)',
     lot_num         BIGINT       DEFAULT NULL            COMMENT '可预约车位总数',
     open_date_begin DATE         DEFAULT NULL            COMMENT '可预约起始日期',
     open_date_end   DATE         DEFAULT NULL            COMMENT '可预约结束日期',
