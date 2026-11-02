@@ -2,9 +2,13 @@ package press.mizhifei.parking.web.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
+import press.mizhifei.parking.web.dto.ParkingDtos.ParkCreateRequest;
+import press.mizhifei.parking.web.dto.ParkingDtos.ParkUpdateRequest;
 
 /**
  * Pins the worldwide plate / phone formats. The same sample table lives in
@@ -21,6 +25,31 @@ class ParkingDtosTest {
         assertThat(List.of("CN", "cn", "GB", "Us")).allMatch(c -> COUNTRY.matcher(c).matches());
         assertThat(List.of("", "C", "CHN", "C1", "中国", "<b>", " CN"))
                 .noneMatch(c -> COUNTRY.matcher(c).matches());
+    }
+
+    @Test
+    void countryBeanValidation_requiredOnCreateButOptionalOnPartialUpdate() {
+        try (var factory = Validation.buildDefaultValidatorFactory()) {
+            Validator validator = factory.getValidator();
+
+            assertThat(validator.validate(createWithCountry(null)))
+                    .anyMatch(v -> v.getPropertyPath().toString().equals("country"));
+            assertThat(validator.validate(createWithCountry("")))
+                    .anyMatch(v -> v.getPropertyPath().toString().equals("country"));
+            assertThat(validator.validate(updateWithCountry(null))).isEmpty();
+            assertThat(validator.validate(updateWithCountry("")))
+                    .anyMatch(v -> v.getPropertyPath().toString().equals("country"));
+            assertThat(validator.validate(updateWithCountry("CHN")))
+                    .anyMatch(v -> v.getPropertyPath().toString().equals("country"));
+        }
+    }
+
+    private static ParkCreateRequest createWithCountry(String country) {
+        return new ParkCreateRequest("Test park", country, 1L, null, null, null, null, null);
+    }
+
+    private static ParkUpdateRequest updateWithCountry(String country) {
+        return new ParkUpdateRequest(1L, null, country, null, null, null, null, null, null);
     }
 
     @Test

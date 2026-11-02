@@ -38,7 +38,19 @@ jobs:
           deno-version: v2.x
 
       - name: Run Deno lint
-        run: deno lint
+        run: deno lint apps packages
+
+      - name: Run Utils Tests
+        working-directory: packages/utils
+        run: deno task test
+
+      - name: Run Web Admin Tests
+        working-directory: apps/web
+        run: deno task test
+
+      - name: Run Mobile H5 Tests
+        working-directory: apps/mobile
+        run: deno task test
 
       - name: Build Web Admin
         working-directory: apps/web

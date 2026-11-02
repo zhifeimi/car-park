@@ -118,6 +118,7 @@ import { addBooking, getLeftLotNum, listParks } from '@/api/parking'
 import {
   CN_MOBILE_REGEX,
   CN_PLATE_REGEX,
+  COUNTRY_CODES,
   E164_REGEX,
   formatDateTime,
   isMainlandChina,
@@ -155,10 +156,9 @@ const form = reactive({
 })
 // Plate entry follows the chosen lot's country (Park.country): the province
 // keyboard + strict mainland format only for a mainland-China lot; free text
-// in any script for every other lot, and before a lot is picked.
-const cnPlate = computed(() =>
-  isMainlandChina(parkList.value.find((p) => p.name === form.park)?.country),
-)
+// for every other valid lot, and before a lot is picked.
+const chosenPark = computed(() => parkList.value.find((p) => p.name === form.park))
+const cnPlate = computed(() => isMainlandChina(chosenPark.value?.country))
 const showKeyboard = ref(false)
 const showCalendar = ref(false)
 const submitting = ref(false)
@@ -257,6 +257,9 @@ function onDateConfirm(date) {
 
 function validate() {
   if (!form.carPlate) return t('booking.validation.plateRequired')
+  if (form.park && !COUNTRY_CODES.includes(chosenPark.value?.country?.trim().toUpperCase())) {
+    return t('booking.validation.parkCountryInvalid')
+  }
   if (cnPlate.value ? !CN_PLATE_REGEX.test(form.carPlate) : !PLATE_REGEX.test(form.carPlate)) {
     return t(cnPlate.value ? 'booking.validation.plateInvalid' : 'booking.validation.plateInvalidIntl')
   }

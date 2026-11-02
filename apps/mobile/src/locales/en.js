@@ -35,6 +35,7 @@ export default {
       plateInvalidIntl: 'Use only the letters and numbers on the plate',
       phoneInvalidIntl: 'Enter the full number with country code, e.g. +44 7700 900123',
       parkRequired: 'Please select a parking location',
+      parkCountryInvalid: 'Parking lot country/region is not configured; please contact staff',
       dateRequired: 'Please select a booking date',
       noticeRequired: 'Please agree to the booking guidelines',
       noLots: 'No spaces left, please choose another park or date',

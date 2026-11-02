@@ -26,9 +26,9 @@ public final class ParkingDtos {
      * Any country's number plate, so one build serves parks worldwide: letters of any
      * script (with combining marks) and digits, single inner spaces / hyphens / middle
      * dots, 2-16 characters. Mainland plates (粤A12345, 粤AD12345) are a subset; the
-     * H5's {@code VITE_REGION=cn} mode still enforces the strict mainland format
-     * client-side. The character class is also this field's XSS guard (ADR-005).
-     * Mirrors {@code PLATE_REGEX} in packages/utils.
+     * H5 enforces the strict mainland format client-side when the selected lot's country
+     * is {@code CN}; {@code VITE_REGION} controls phone validation only. The character
+     * class is also this field's XSS guard (ADR-005). Mirrors {@code PLATE_REGEX} in packages/utils.
      */
     public static final String PLATE_REGEX =
             "^[\\p{L}\\p{N}](?:[\\p{L}\\p{M}\\p{N}]|[ \\-·](?=[\\p{L}\\p{N}])){1,15}$";
