@@ -83,6 +83,10 @@
       </section>
     </div>
 
+    <footer class="site-footer">
+      <a href="https://zhifei.org" target="_blank" rel="noopener noreferrer">Zhifei.org</a>
+    </footer>
+
     <div class="submit-bar">
       <van-button type="primary" size="large" block :loading="submitting" @click="submit">
         {{ t('booking.submit') }}
@@ -401,6 +405,24 @@ async function submit() {
   font-size: var(--np-text-sm);
   line-height: 1.65;
   color: var(--np-ink-2);
+}
+
+.site-footer {
+  padding: 0 var(--np-space-4) var(--np-space-4);
+  text-align: center;
+}
+
+.site-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--np-tap);
+  color: var(--np-ink-2);
+  font-size: var(--np-text-sm);
+}
+
+.site-footer a:focus-visible {
+  outline: 2px solid var(--np-brand);
+  outline-offset: 4px;
 }
 
 .submit-bar {
