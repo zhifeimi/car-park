@@ -148,3 +148,16 @@ describe('BookingAdd country-driven plate validation', () => {
     expect(wrapper.findComponent({ name: 'PlateKeyboard' }).props('show')).toBe(false)
   })
 })
+
+describe('BookingAdd footer', () => {
+  it('links to the business website in a new tab', async () => {
+    await mountBooking()
+
+    const link = wrapper.find('.site-footer a')
+    expect(link.exists()).toBe(true)
+    expect(link.text()).toBe('Zhifei.org')
+    expect(link.attributes('href')).toBe('https://zhifei.org')
+    expect(link.attributes('target')).toBe('_blank')
+    expect(link.attributes('rel')).toBe('noopener noreferrer')
+  })
+})
