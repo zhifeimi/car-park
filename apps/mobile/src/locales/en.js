@@ -4,6 +4,7 @@ export default {
     english: 'English',
     chinese: '中文',
     langShort: 'EN',
+    developedBy: 'Developed by Zhifei.org',
   },
   booking: {
     title: 'Visitor Parking Booking',

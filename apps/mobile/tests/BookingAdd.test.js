@@ -150,12 +150,16 @@ describe('BookingAdd country-driven plate validation', () => {
 })
 
 describe('BookingAdd footer', () => {
-  it('links to the business website in a new tab', async () => {
+  it.each([
+    ['en', 'Developed by Zhifei.org'],
+    ['zh-CN', '由 Zhifei.org 开发'],
+  ])('shows the %s developer attribution with a secure external link', async (locale, attribution) => {
+    setLocale(locale)
     await mountBooking()
 
     const link = wrapper.find('.site-footer a')
     expect(link.exists()).toBe(true)
-    expect(link.text()).toBe('Zhifei.org')
+    expect(link.text()).toBe(attribution)
     expect(link.attributes('href')).toBe('https://zhifei.org')
     expect(link.attributes('target')).toBe('_blank')
     expect(link.attributes('rel')).toBe('noopener noreferrer')

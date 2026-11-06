@@ -84,7 +84,7 @@
     </div>
 
     <footer class="site-footer">
-      <a href="https://zhifei.org" target="_blank" rel="noopener noreferrer">Zhifei.org</a>
+      <a href="https://zhifei.org" target="_blank" rel="noopener noreferrer">{{ t('common.developedBy') }}</a>
     </footer>
 
     <div class="submit-bar">

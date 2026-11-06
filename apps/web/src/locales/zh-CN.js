@@ -30,6 +30,7 @@ export default {
     english: 'English',
     chinese: '简体中文',
     languageName: '简体中文',
+    developedBy: '由 Zhifei.org 开发',
   },
   nav: {
     brandTitle: '停车场管理',

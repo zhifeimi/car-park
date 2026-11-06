@@ -4,6 +4,7 @@ export default {
     english: 'English',
     chinese: '中文',
     langShort: '中文',
+    developedBy: '由 Zhifei.org 开发',
   },
   booking: {
     title: '访客停车预约',

@@ -30,6 +30,7 @@ export default {
     english: 'English',
     chinese: '简体中文',
     languageName: 'English',
+    developedBy: 'Developed by Zhifei.org',
   },
   nav: {
     brandTitle: 'Parking Management',

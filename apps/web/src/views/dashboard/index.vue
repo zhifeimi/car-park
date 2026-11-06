@@ -103,6 +103,10 @@
       </div>
       <el-empty v-else :description="t('dashboard.noBookings')" :image-size="60" />
     </div>
+
+    <footer class="site-footer">
+      <a href="https://zhifei.org" target="_blank" rel="noopener noreferrer">{{ t('common.developedBy') }}</a>
+    </footer>
   </div>
 </template>
 
@@ -379,5 +383,23 @@ onMounted(() => {
   color: var(--cp-text-muted);
   min-width: 140px;
   text-align: right;
+}
+
+.site-footer {
+  padding: var(--np-space-2) 0 0;
+  text-align: center;
+}
+
+.site-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--np-tap);
+  color: var(--cp-text-muted);
+  font-size: var(--np-text-sm);
+}
+
+.site-footer a:focus-visible {
+  outline: 2px solid var(--cp-primary);
+  outline-offset: 4px;
 }
 </style>
